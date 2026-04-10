@@ -1,3 +1,15 @@
-FROM nginx:alpine
-COPY templates/index.html /usr/share/nginx/html/index.html
-EXPOSE 80
+# Start with a lightweight Python image
+FROM python:3.11-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of your application code
+COPY . .
+
+# The command to start your application
+CMD ["python", "app.py"]
