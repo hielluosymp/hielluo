@@ -298,6 +298,23 @@
     .btn-danger:hover { background: #ff4d4d18; border-color: #ff6b6b; }
     .settings-msg { font-size: 0.75rem; text-align: center; min-height: 16px; color: var(--accent); }
 
+    /* ── VERIFY BANNER ── */
+    #verify-banner {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 100; display: none; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      text-align: center; padding: 40px;
+    }
+    #verify-banner h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; color: #fff; }
+    #verify-banner p { font-size: 0.82rem; color: var(--text-muted); max-width: 340px; line-height: 1.6; }
+    .btn-resend {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-muted); font-size: 0.78rem; padding: 8px 16px;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-resend:hover { color: var(--accent); border-color: var(--accent); }
+
     /* ── INTRO ── */
     #intro {
       position: fixed; inset: 0; background: #000;
@@ -346,6 +363,15 @@
     <img src="/static/logo.png" alt="Hielluo" />
     <h1>Hielluo</h1>
     <p>AI solutions for everyone</p>
+  </div>
+
+  <!-- ── VERIFY BANNER ── -->
+  <div id="verify-banner">
+    <h2>Check your email</h2>
+    <p>We sent a verification link to your email address. Please verify your email to continue.</p>
+    <button class="btn-resend" onclick="resendVerification()">Resend email</button>
+    <button class="btn-resend" onclick="fbSignOut(auth)">Back to sign in</button>
+    <div id="resend-msg" style="font-size:0.75rem;color:var(--accent);min-height:16px;"></div>
   </div>
 
   <!-- ── AUTH SCREEN ── -->
@@ -545,6 +571,7 @@
       updateProfile,
       updatePassword,
       sendPasswordResetEmail,
+      sendEmailVerification,
       deleteUser,
       signInWithCustomToken,
     } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
@@ -580,11 +607,18 @@
 
     // ── Auth state ──
     onAuthStateChanged(auth, user => {
-      if (user) {
+      const verifyBanner = document.getElementById('verify-banner');
+      if (user && (user.emailVerified || user.providerData[0]?.providerId === 'google.com')) {
+        verifyBanner.style.display = 'none';
         populateUser(user);
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app').classList.add('visible');
+      } else if (user && !user.emailVerified) {
+        verifyBanner.style.display = 'flex';
+        document.getElementById('app').classList.remove('visible');
+        document.getElementById('auth-screen').style.display = 'none';
       } else {
+        verifyBanner.style.display = 'none';
         document.getElementById('app').classList.remove('visible');
         document.getElementById('auth-screen').style.display = 'flex';
       }
@@ -656,6 +690,7 @@
         } else {
           const cred = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(cred.user, { displayName: name });
+          await sendEmailVerification(cred.user);
         }
       } catch (err) {
         setAuthError(friendlyError(err.code));
@@ -751,6 +786,17 @@
     document.getElementById('auth-password').addEventListener('keydown', e => {
       if (e.key === 'Enter') window.authSubmit();
     });
+
+    // ── Resend verification ──
+    window.resendVerification = async function() {
+      const msg = document.getElementById('resend-msg');
+      try {
+        await sendEmailVerification(auth.currentUser);
+        msg.textContent = 'Email sent!';
+      } catch {
+        msg.textContent = 'Please wait before trying again.';
+      }
+    };
 
     // ── Sidebar navigation ──
     window.showSection = function(name, el) {
