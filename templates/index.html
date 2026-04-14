@@ -406,30 +406,69 @@
 
       <nav id="sidebar">
         <div class="sidebar-section-label">Browse</div>
-        <a class="sidebar-link active" href="#">All apps</a>
-        <a class="sidebar-link" href="#">Recent</a>
+        <a class="sidebar-link active" href="#" onclick="showSection('all', this)">All apps</a>
+        <a class="sidebar-link" href="#" onclick="showSection('recent', this)">Recent</a>
         <div class="sidebar-section-label" style="margin-top:8px">Categories</div>
-        <a class="sidebar-link" href="#">AI</a>
-        <a class="sidebar-link" href="#">Productivity</a>
-        <a class="sidebar-link" href="#">Tools</a>
+        <a class="sidebar-link" href="#" onclick="showSection('ai', this)">AI</a>
+        <a class="sidebar-link" href="#" onclick="showSection('productivity', this)">Productivity</a>
+        <a class="sidebar-link" href="#" onclick="showSection('tools', this)">Tools</a>
       </nav>
 
       <main id="app-main">
-        <div class="main-heading">Apps</div>
-        <div class="apps-grid">
+        <!-- All apps -->
+        <div id="section-all">
+          <div class="main-heading">Apps</div>
+          <div class="apps-grid">
+            <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+              <div class="app-card-icon">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                  <line x1="14" y1="2"  x2="14" y2="26"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="8"  x2="4"  y2="20"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="20" x2="4"  y2="8"   stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="app-card-title">ThatGPT</div>
+              <div class="app-card-desc">AI chat powered by the latest models.</div>
+            </a>
+          </div>
+        </div>
 
-          <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
-            <div class="app-card-icon">
-              <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                <line x1="14" y1="2"  x2="14" y2="26"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                <line x1="24" y1="8"  x2="4"  y2="20"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                <line x1="24" y1="20" x2="4"  y2="8"   stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="app-card-title">ThatGPT</div>
-            <div class="app-card-desc">AI chat powered by the latest models.</div>
-          </a>
+        <!-- Recent -->
+        <div id="section-recent" style="display:none">
+          <div class="main-heading">Recent</div>
+          <div class="apps-grid" id="recent-grid">
+            <div style="color:var(--text-muted);font-size:0.8rem;">No recently visited apps.</div>
+          </div>
+        </div>
 
+        <!-- AI -->
+        <div id="section-ai" style="display:none">
+          <div class="main-heading">AI</div>
+          <div class="apps-grid">
+            <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+              <div class="app-card-icon">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                  <line x1="14" y1="2"  x2="14" y2="26"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="8"  x2="4"  y2="20"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="20" x2="4"  y2="8"   stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="app-card-title">ThatGPT</div>
+              <div class="app-card-desc">AI chat powered by the latest models.</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Productivity -->
+        <div id="section-productivity" style="display:none">
+          <div class="main-heading">Productivity</div>
+          <div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Coming Soon!</div>
+        </div>
+
+        <!-- Tools -->
+        <div id="section-tools" style="display:none">
+          <div class="main-heading">Tools</div>
+          <div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Coming Soon!</div>
         </div>
       </main>
 
@@ -711,10 +750,52 @@
       if (e.key === 'Enter') window.authSubmit();
     });
 
+    // ── Sidebar navigation ──
+    window.showSection = function(name, el) {
+      event.preventDefault();
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('#app-main > div').forEach(s => s.style.display = 'none');
+      document.getElementById('section-' + name).style.display = 'block';
+    };
+
+    // ── Recent tracking ──
+    const RECENT_KEY = 'hielluo_recent';
+    function trackRecent(name, url) {
+      let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      recent = recent.filter(r => r.name !== name);
+      recent.unshift({ name, url });
+      recent = recent.slice(0, 6);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+      renderRecent();
+    }
+    function renderRecent() {
+      const recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      const grid = document.getElementById('recent-grid');
+      if (!recent.length) {
+        grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No recently visited apps.</div>';
+        return;
+      }
+      grid.innerHTML = recent.map(r => `
+        <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+          <div class="app-card-icon">
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <line x1="14" y1="2" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="8" x2="4" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="20" x2="4" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="app-card-title">${r.name}</div>
+          <div class="app-card-desc">AI chat powered by the latest models.</div>
+        </a>`).join('');
+    }
+    renderRecent();
+
     // ── SSO redirect to ThatGPT ──
     window.openThatGPT = async function(e) {
       e.preventDefault();
       const user = auth.currentUser;
+      trackRecent('ThatGPT', 'https://thatgptai.org');
       if (!user) { window.open('https://thatgptai.org', '_blank'); return; }
       try {
         const idToken = await user.getIdToken();
