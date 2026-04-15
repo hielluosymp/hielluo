@@ -379,9 +379,10 @@
   <!-- ── VERIFY BANNER ── -->
   <div id="verify-banner">
     <h2>Check your email</h2>
-    <p>We sent a verification link to your email address. Please verify your email, then reload the page to continue.</p>
-    <button class="btn-resend" onclick="resendVerification()">Resend email</button>
-    <button class="btn-resend" onclick="fbSignOut(auth)">Back to sign in</button>
+    <p>We sent a verification link to your email address. Please verify your email to continue.</p>
+    <div id="verify-countdown" style="font-size:1.1rem;font-family:'Syne',sans-serif;font-weight:800;color:#fff;min-height:28px;letter-spacing:0.04em;"></div>
+    <button class="btn-resend" id="btn-resend" onclick="resendVerification()">Resend email</button>
+    <button class="btn-resend" onclick="cancelVerification()">Back to sign in</button>
     <div id="resend-msg" style="font-size:0.75rem;color:var(--accent);min-height:16px;"></div>
   </div>
 
@@ -736,6 +737,7 @@
           const cred = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(cred.user, { displayName: name });
           await sendEmailVerification(cred.user);
+          startVerificationCountdown(cred.user);
         }
       } catch (err) {
         setAuthError(friendlyError(err.code));
@@ -850,13 +852,116 @@
       if (e.key === 'Enter') window.authSubmit();
     });
 
-    // ── Resend verification ──
+    // ── Verification countdown ──
+    let _pendingVerifyUser = null;
+    let _verifyInterval = null;
+    let _resendCooldown = null;
+    let _resendReadyAt = 0;
+
+    function startVerificationCountdown(user) {
+      _pendingVerifyUser = user;
+      const expiresAt = Date.now() + 180_000;
+      let lastPollAt = Date.now();
+      const countdownEl = document.getElementById('verify-countdown');
+      const resendBtn = document.getElementById('btn-resend');
+
+      function updateDisplay(secondsLeft) {
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} remaining`;
+        countdownEl.style.color = secondsLeft <= 30 ? '#ff6b6b' : '#fff';
+      }
+      updateDisplay(180);
+
+      // Start resend cooldown from first send
+      _resendReadyAt = Date.now() + 60_000;
+      resendBtn.disabled = true;
+      let resendRemaining = 60;
+      resendBtn.textContent = `Resend (${resendRemaining}s)`;
+      _resendCooldown = setInterval(() => {
+        resendRemaining--;
+        if (resendRemaining <= 0) {
+          clearInterval(_resendCooldown); _resendCooldown = null;
+          resendBtn.disabled = false; resendBtn.textContent = 'Resend email';
+        } else {
+          resendBtn.textContent = `Resend (${resendRemaining}s)`;
+        }
+      }, 1000);
+
+      _verifyInterval = setInterval(async () => {
+        const now = Date.now();
+        const secondsLeft = Math.max(0, Math.round((expiresAt - now) / 1000));
+
+        if (now - lastPollAt >= 3000) {
+          lastPollAt = now;
+          try {
+            await user.reload();
+            if (user.emailVerified) {
+              clearInterval(_verifyInterval); _verifyInterval = null;
+              if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+              _pendingVerifyUser = null;
+              window.location.reload();
+              return;
+            }
+          } catch {}
+        }
+
+        if (secondsLeft <= 0) {
+          clearInterval(_verifyInterval); _verifyInterval = null;
+          if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+          try { await deleteUser(_pendingVerifyUser); } catch {}
+          _pendingVerifyUser = null;
+          await fbSignOut(auth).catch(() => {});
+          countdownEl.textContent = 'Time expired — please sign up again.';
+          countdownEl.style.color = '#ff6b6b';
+          document.getElementById('resend-msg').textContent = '';
+          resendBtn.disabled = true; resendBtn.textContent = 'Resend email';
+          return;
+        }
+        updateDisplay(secondsLeft);
+      }, 1000);
+    }
+
+    window.cancelVerification = async function() {
+      if (_verifyInterval) { clearInterval(_verifyInterval); _verifyInterval = null; }
+      if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+      if (_pendingVerifyUser) {
+        try { await deleteUser(_pendingVerifyUser); } catch {}
+        _pendingVerifyUser = null;
+      }
+      await fbSignOut(auth).catch(() => {});
+      document.getElementById('verify-countdown').textContent = '';
+      document.getElementById('resend-msg').textContent = '';
+      const resendBtn = document.getElementById('btn-resend');
+      resendBtn.disabled = false; resendBtn.textContent = 'Resend email';
+    };
+
     window.resendVerification = async function() {
       const msg = document.getElementById('resend-msg');
+      const btn = document.getElementById('btn-resend');
+      const user = auth.currentUser || _pendingVerifyUser;
+      if (!user) return;
+      if (Date.now() < _resendReadyAt) return;
       try {
-        await sendEmailVerification(auth.currentUser);
-        msg.textContent = 'Email sent! Reload the page after verifying.';
+        await sendEmailVerification(user);
+        _resendReadyAt = Date.now() + 60_000;
+        msg.style.color = 'var(--accent)';
+        msg.textContent = 'Email sent!';
+        btn.disabled = true;
+        let remaining = 60;
+        btn.textContent = `Resend (${remaining}s)`;
+        if (_resendCooldown) clearInterval(_resendCooldown);
+        _resendCooldown = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(_resendCooldown); _resendCooldown = null;
+            btn.disabled = false; btn.textContent = 'Resend email';
+          } else {
+            btn.textContent = `Resend (${remaining}s)`;
+          }
+        }, 1000);
       } catch {
+        msg.style.color = '#ff6b6b';
         msg.textContent = 'Please wait before trying again.';
       }
     };
