@@ -874,9 +874,9 @@
       updateDisplay(180);
 
       // Start resend cooldown from first send
-      _resendReadyAt = Date.now() + 60_000;
+      _resendReadyAt = Date.now() + 120_000;
       resendBtn.disabled = true;
-      let resendRemaining = 60;
+      let resendRemaining = 120;
       resendBtn.textContent = `Resend (${resendRemaining}s)`;
       _resendCooldown = setInterval(() => {
         resendRemaining--;
@@ -944,11 +944,11 @@
       if (Date.now() < _resendReadyAt) return;
       try {
         await sendEmailVerification(user);
-        _resendReadyAt = Date.now() + 60_000;
+        _resendReadyAt = Date.now() + 120_000;
         msg.style.color = 'var(--accent)';
         msg.textContent = 'Email sent!';
         btn.disabled = true;
-        let remaining = 60;
+        let remaining = 120;
         btn.textContent = `Resend (${remaining}s)`;
         if (_resendCooldown) clearInterval(_resendCooldown);
         _resendCooldown = setInterval(() => {
