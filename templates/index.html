@@ -529,31 +529,50 @@
       <div class="settings-divider"></div>
 
       <div class="settings-section-label">Display name</div>
-      <input id="settings-display-name" class="settings-input" type="text" placeholder="Your name" />
-
-      <div class="settings-section-label">Change password</div>
-      <div class="settings-pw-field">
-        <input class="settings-input" type="password" placeholder="New password" id="new-pw" />
-        <button class="btn-pw-toggle" onclick="togglePw('new-pw', this)">show</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input id="settings-display-name" class="settings-input" type="text" placeholder="Your name" />
+        <button class="btn-settings-save" id="btn-save-name">Save</button>
       </div>
-      <div class="settings-pw-field">
-        <input class="settings-input" type="password" placeholder="Confirm password" id="conf-pw" />
-        <button class="btn-pw-toggle" onclick="togglePw('conf-pw', this)">show</button>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <a href="#" class="settings-forgot">Forgot password?</a>
-        <button class="btn-settings-save">Save changes</button>
-      </div>
+      <div class="settings-msg" id="settings-name-msg"></div>
 
       <div class="settings-divider"></div>
 
-      <div class="settings-danger">
-        <span class="settings-danger-label">Delete account</span>
-        <button class="btn-danger">Delete</button>
+      <div class="settings-section-label">Change password</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" placeholder="Current password" id="old-pw" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('old-pw', this)">show</button>
       </div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" placeholder="New password" id="new-pw" autocomplete="new-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('new-pw', this)">show</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <a href="#" class="settings-forgot" id="settings-forgot-link">Forgot password?</a>
+        <button class="btn-settings-save" id="btn-save-password">Save</button>
+      </div>
+      <div class="settings-msg" id="settings-pw-msg"></div>
 
-      <div class="settings-msg"></div>
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Change email</div>
+      <input class="settings-input" type="email" id="settings-new-email" placeholder="New email address" autocomplete="email" />
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-email-password" placeholder="Current password to confirm" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('settings-email-password', this)">show</button>
+      </div>
+      <button class="btn-settings-save" id="btn-save-email">Save</button>
+      <div class="settings-msg" id="settings-email-msg"></div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Delete account</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">This permanently deletes your account.</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-delete-password" placeholder="Enter your password to confirm" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('settings-delete-password', this)">show</button>
+      </div>
+      <button class="btn-danger" id="btn-delete-account" style="width:100%;padding:10px;">Delete my account</button>
+      <div class="settings-msg" id="settings-delete-msg"></div>
     </div>
   </div>
 
@@ -570,10 +589,13 @@
       signInWithPopup,
       updateProfile,
       updatePassword,
+      updateEmail,
       sendPasswordResetEmail,
       sendEmailVerification,
       deleteUser,
       signInWithCustomToken,
+      EmailAuthProvider,
+      reauthenticateWithCredential,
     } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -719,60 +741,78 @@
       if (e.target === this) window.closeSettings();
     });
 
-    // ── Save settings ──
-    document.querySelector('.btn-settings-save').addEventListener('click', async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-      const msg = document.querySelector('.settings-msg');
+    function setMsg(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.style.color = ok ? 'var(--accent)' : '#ff6b6b';
+      el.textContent = text;
+    }
+
+    // ── Save display name ──
+    document.getElementById('btn-save-name').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
       const newName = document.getElementById('settings-display-name').value.trim();
-      const newPw = document.getElementById('new-pw').value;
-      const confPw = document.getElementById('conf-pw').value;
-      msg.style.color = 'var(--accent)';
-      msg.textContent = '';
+      if (!newName) { setMsg('settings-name-msg', 'Please enter a name.', false); return; }
       try {
-        if (newName && newName !== user.displayName) {
-          await updateProfile(user, { displayName: newName });
-          populateUser(auth.currentUser);
-        }
-        if (newPw) {
-          if (newPw !== confPw) { msg.style.color = '#ff6b6b'; msg.textContent = 'Passwords do not match.'; return; }
-          await updatePassword(user, newPw);
-          document.getElementById('new-pw').value = '';
-          document.getElementById('conf-pw').value = '';
-        }
-        msg.textContent = 'Saved.';
-      } catch (err) {
-        msg.style.color = '#ff6b6b';
-        msg.textContent = friendlyError(err.code);
-      }
+        await updateProfile(user, { displayName: newName });
+        populateUser(auth.currentUser);
+        setMsg('settings-name-msg', 'Saved.');
+      } catch (err) { setMsg('settings-name-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Save password ──
+    document.getElementById('btn-save-password').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const oldPw = document.getElementById('old-pw').value;
+      const newPw = document.getElementById('new-pw').value;
+      if (!oldPw || !newPw) { setMsg('settings-pw-msg', 'Please fill in all fields.', false); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, oldPw);
+        await reauthenticateWithCredential(user, cred);
+        await updatePassword(user, newPw);
+        document.getElementById('old-pw').value = '';
+        document.getElementById('new-pw').value = '';
+        setMsg('settings-pw-msg', 'Password updated.');
+      } catch (err) { setMsg('settings-pw-msg', friendlyError(err.code), false); }
     });
 
     // ── Forgot password ──
-    document.querySelector('.settings-forgot').addEventListener('click', async e => {
+    document.getElementById('settings-forgot-link').addEventListener('click', async e => {
       e.preventDefault();
-      const user = auth.currentUser;
-      if (!user) return;
-      const msg = document.querySelector('.settings-msg');
+      const user = auth.currentUser; if (!user) return;
       try {
         await sendPasswordResetEmail(auth, user.email);
-        msg.style.color = 'var(--accent)';
-        msg.textContent = 'Reset email sent.';
-      } catch (err) {
-        msg.style.color = '#ff6b6b';
-        msg.textContent = friendlyError(err.code);
-      }
+        setMsg('settings-pw-msg', 'Reset email sent.');
+      } catch (err) { setMsg('settings-pw-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Save email ──
+    document.getElementById('btn-save-email').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const newEmail = document.getElementById('settings-new-email').value.trim();
+      const pw = document.getElementById('settings-email-password').value;
+      if (!newEmail || !pw) { setMsg('settings-email-msg', 'Please fill in all fields.', false); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, pw);
+        await reauthenticateWithCredential(user, cred);
+        await updateEmail(user, newEmail);
+        await sendEmailVerification(user);
+        document.getElementById('settings-new-email').value = '';
+        document.getElementById('settings-email-password').value = '';
+        setMsg('settings-email-msg', 'Email updated. Verify your new address.');
+        populateUser(auth.currentUser);
+      } catch (err) { setMsg('settings-email-msg', friendlyError(err.code), false); }
     });
 
     // ── Delete account ──
-    document.querySelector('.btn-danger').addEventListener('click', async () => {
-      if (!confirm('Delete your account? This cannot be undone.')) return;
+    document.getElementById('btn-delete-account').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const pw = document.getElementById('settings-delete-password').value;
+      if (!pw) { setMsg('settings-delete-msg', 'Please enter your password.', false); return; }
       try {
-        await deleteUser(auth.currentUser);
-      } catch (err) {
-        const msg = document.querySelector('.settings-msg');
-        msg.style.color = '#ff6b6b';
-        msg.textContent = friendlyError(err.code);
-      }
+        const cred = EmailAuthProvider.credential(user.email, pw);
+        await reauthenticateWithCredential(user, cred);
+        await deleteUser(user);
+      } catch (err) { setMsg('settings-delete-msg', friendlyError(err.code), false); }
     });
 
     // ── Password toggle ──
