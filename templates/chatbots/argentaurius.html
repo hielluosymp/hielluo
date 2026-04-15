@@ -31,7 +31,7 @@
 
     /* ── SIDEBAR ── */
     #sidebar {
-      width: 260px; background: var(--surface);
+      width: 300px; background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex; flex-direction: column; flex-shrink: 0;
     }
@@ -81,8 +81,20 @@
       padding: 12px 14px; border-top: 1px solid var(--border);
       display: flex; flex-direction: column; gap: 8px;
     }
+    .sidebar-footer-top { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent-dim); display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem;
+      flex-shrink: 0; overflow: hidden; cursor: pointer; color: #fff; transition: opacity 0.15s;
+    }
+    .user-avatar:hover { opacity: 0.8; }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .user-info { flex: 1; overflow: hidden; cursor: pointer; }
+    .user-name { font-size: 0.75rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sidebar-footer-actions { display: flex; gap: 6px; }
-    .btn-home, .btn-signout {
+    .btn-home, .btn-signout, .btn-settings-small {
       flex: 1; background: none; border: 1px solid var(--border); border-radius: 6px;
       color: var(--text-muted); font-size: 0.72rem; padding: 7px 10px;
       cursor: pointer; font-family: 'DM Mono', monospace; text-decoration: none;
@@ -90,6 +102,74 @@
     }
     .btn-home:hover { color: var(--accent); border-color: var(--accent); }
     .btn-signout:hover { color: #ff6b6b; border-color: #ff6b6b44; }
+    .btn-settings-small:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── SETTINGS MODAL ── */
+    #settings-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 200; display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #settings-modal.visible { display: flex; }
+    .settings-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 32px; width: 100%; max-width: 420px;
+      display: flex; flex-direction: column; gap: 20px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .settings-box::-webkit-scrollbar { width: 3px; }
+    .settings-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; }
+    .settings-header h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: #fff; }
+    .btn-close {
+      background: none; border: none; color: var(--text-muted); font-size: 1.2rem;
+      cursor: pointer; padding: 4px; transition: color 0.15s; line-height: 1;
+    }
+    .btn-close:hover { color: var(--text); }
+    .settings-avatar-row { display: flex; align-items: center; gap: 16px; }
+    .settings-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem;
+      flex-shrink: 0; overflow: hidden; color: #fff;
+    }
+    .settings-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .settings-user-info .s-name { font-size: 0.95rem; font-weight: 700; color: var(--text); font-family: 'Syne', sans-serif; }
+    .settings-user-info .s-email { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .settings-section-label {
+      font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .settings-input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 14px; color: var(--text); font-family: 'DM Mono', monospace;
+      font-size: 0.85rem; outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .settings-input:focus { border-color: var(--accent); }
+    .settings-input::placeholder { color: var(--text-muted); }
+    .settings-pw-field { position: relative; display: flex; align-items: center; width: 100%; }
+    .settings-pw-field .settings-input { padding-right: 52px; }
+    .btn-pw-toggle {
+      position: absolute; right: 10px; background: none; border: none;
+      color: var(--text-muted); font-size: 0.7rem; cursor: pointer;
+      font-family: 'DM Mono', monospace; padding: 4px; transition: color 0.15s; line-height: 1;
+    }
+    .btn-pw-toggle:hover { color: var(--text); }
+    .settings-forgot { font-size: 0.72rem; color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+    .settings-forgot:hover { color: var(--accent); }
+    .btn-settings-save {
+      background: var(--accent); color: #0d0d0f; border: none; border-radius: 10px;
+      padding: 11px 20px; font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-settings-save:hover { background: #c4a85a; }
+    .settings-divider { height: 1px; background: var(--border); }
+    .btn-danger {
+      background: none; border: 1px solid #ff4d4d44; border-radius: 8px;
+      color: #ff6b6b; font-size: 0.75rem; padding: 7px 14px;
+      cursor: pointer; font-family: 'DM Mono', monospace; transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-danger:hover { background: #ff4d4d18; border-color: #ff6b6b; }
+    .settings-msg { font-size: 0.75rem; text-align: center; min-height: 16px; color: var(--accent); }
 
     /* ── CHAT AREA ── */
     #chat-area {
@@ -204,10 +284,75 @@
     </div>
     <div id="chat-list"></div>
     <div class="sidebar-footer">
-      <div class="sidebar-footer-actions">
-        <a class="btn-home" href="/">Home</a>
-        <button class="btn-signout" onclick="window.location.href='/'">Sign out</button>
+      <div class="sidebar-footer-top">
+        <div class="user-avatar" id="user-avatar" onclick="openSettings()">?</div>
+        <div class="user-info" onclick="openSettings()">
+          <div class="user-name" id="user-name">—</div>
+          <div class="user-email" id="user-email">—</div>
+        </div>
       </div>
+      <div class="sidebar-footer-actions">
+        <a class="btn-home" href="#" id="btn-home">Home</a>
+        <button class="btn-settings-small" onclick="openSettings()">⚙ Settings</button>
+        <button class="btn-signout" id="btn-signout">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal">
+    <div class="settings-box">
+      <div class="settings-header">
+        <h2>Account settings</h2>
+        <button class="btn-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="settings-avatar-row">
+        <div class="settings-avatar" id="settings-avatar">?</div>
+        <div class="settings-user-info">
+          <div class="s-name" id="settings-display-name">—</div>
+          <div class="s-email" id="settings-display-email">—</div>
+        </div>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-section-label">Display Name</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input class="settings-input" type="text" id="settings-new-name" placeholder="Your name"/>
+        <button class="btn-settings-save" id="btn-save-name">Save</button>
+      </div>
+      <div class="settings-msg" id="settings-name-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-section-label">Change Password</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-old-password" placeholder="Current password"/>
+        <button class="btn-pw-toggle" data-target="settings-old-password">show</button>
+      </div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-password" placeholder="New password"/>
+        <button class="btn-pw-toggle" data-target="settings-password">show</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <button class="btn-settings-save" id="btn-save-password">Save</button>
+        <a class="settings-forgot" href="#" id="btn-forgot-password">Forgot password?</a>
+      </div>
+      <div class="settings-msg" id="settings-pw-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-section-label">Change Email</div>
+      <input class="settings-input" type="email" id="settings-new-email" placeholder="New email address"/>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-email-password" placeholder="Current password to confirm"/>
+        <button class="btn-pw-toggle" data-target="settings-email-password">show</button>
+      </div>
+      <button class="btn-settings-save" id="btn-save-email">Save</button>
+      <div class="settings-msg" id="settings-email-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-section-label">Delete Account</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">This permanently deletes your account.</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-delete-password" placeholder="Enter your password to confirm"/>
+        <button class="btn-pw-toggle" data-target="settings-delete-password">show</button>
+      </div>
+      <button class="btn-danger" id="btn-delete-account" style="width:100%;padding:10px;">Delete my account</button>
+      <div class="settings-msg" id="settings-delete-msg"></div>
     </div>
   </div>
 
@@ -227,7 +372,141 @@
     <div id="footnote">&copy; Hielluo 2026 &nbsp;·&nbsp; AI can make mistakes</div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signOut as fbSignOut,
+      EmailAuthProvider, reauthenticateWithCredential,
+      updateProfile, updatePassword, updateEmail,
+      sendPasswordResetEmail, sendEmailVerification, deleteUser, signInWithCustomToken
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5UX0bdvHs8kolEWrpJ9SG6md9-GcGvq4",
+      authDomain: "hielluo.firebaseapp.com",
+      projectId: "hielluo",
+      storageBucket: "hielluo.firebasestorage.app",
+      messagingSenderId: "925488019863",
+      appId: "1:925488019863:web:6171eac97352abed9bacd2"
+    };
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+
+    // SSO from Hielluo
+    const _sso = new URLSearchParams(window.location.search).get('sso');
+    if (_sso) { history.replaceState(null, '', window.location.pathname); signInWithCustomToken(auth, _sso).catch(() => {}); }
+
+    onAuthStateChanged(auth, user => {
+      if (!user) { window.location.href = '/'; return; }
+      populateUser(user);
+    });
+
+    function populateUser(user) {
+      const name = user.displayName || (user.email ? user.email.split('@')[0] : '');
+      const email = user.email || '';
+      const initial = name ? name.charAt(0).toUpperCase() : 'U';
+      const photo = user.photoURL || (user.providerData[0]?.photoURL) || '';
+      const avatar = document.getElementById('user-avatar');
+      if (photo) { avatar.innerHTML = `<img src="${photo}" alt="${name}">`; } else { avatar.textContent = initial; }
+      document.getElementById('user-name').textContent = name;
+      document.getElementById('user-email').textContent = email;
+      const sa = document.getElementById('settings-avatar');
+      if (photo) { sa.innerHTML = `<img src="${photo}" alt="${name}">`; } else { sa.textContent = initial; }
+      document.getElementById('settings-display-name').textContent = name;
+      document.getElementById('settings-display-email').textContent = email;
+      document.getElementById('settings-new-name').value = name;
+    }
+
+    // ── Settings modal ──
+    window.openSettings = function() { document.getElementById('settings-modal').classList.add('visible'); };
+    window.closeSettings = function() { document.getElementById('settings-modal').classList.remove('visible'); };
+    document.getElementById('settings-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSettings(); });
+
+    function setMsg(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.style.color = ok ? 'var(--accent)' : '#ff6b6b';
+      el.textContent = text;
+    }
+
+    document.getElementById('btn-save-name').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const name = document.getElementById('settings-new-name').value.trim();
+      if (!name) { setMsg('settings-name-msg', 'Please enter a name.', false); return; }
+      try { await updateProfile(user, { displayName: name }); populateUser(auth.currentUser); setMsg('settings-name-msg', 'Saved.'); }
+      catch (e) { setMsg('settings-name-msg', 'Failed to update name.', false); }
+    });
+
+    document.getElementById('btn-save-password').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const oldPw = document.getElementById('settings-old-password').value;
+      const newPw = document.getElementById('settings-password').value;
+      if (!oldPw || !newPw) { setMsg('settings-pw-msg', 'Please fill in all fields.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, oldPw));
+        await updatePassword(user, newPw);
+        document.getElementById('settings-old-password').value = '';
+        document.getElementById('settings-password').value = '';
+        setMsg('settings-pw-msg', 'Password updated.');
+      } catch (e) { setMsg('settings-pw-msg', e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential' ? 'Current password is incorrect.' : 'Something went wrong.', false); }
+    });
+
+    document.getElementById('btn-forgot-password').addEventListener('click', async e => {
+      e.preventDefault();
+      const user = auth.currentUser; if (!user) return;
+      try { await sendPasswordResetEmail(auth, user.email); setMsg('settings-pw-msg', 'Reset email sent.'); }
+      catch { setMsg('settings-pw-msg', 'Failed to send reset email.', false); }
+    });
+
+    document.getElementById('btn-save-email').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const newEmail = document.getElementById('settings-new-email').value.trim();
+      const pw = document.getElementById('settings-email-password').value;
+      if (!newEmail || !pw) { setMsg('settings-email-msg', 'Please fill in all fields.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+        await updateEmail(user, newEmail);
+        await sendEmailVerification(user);
+        document.getElementById('settings-new-email').value = '';
+        document.getElementById('settings-email-password').value = '';
+        setMsg('settings-email-msg', 'Email updated. Verify your new address.');
+        populateUser(auth.currentUser);
+      } catch (e) { setMsg('settings-email-msg', e.code === 'auth/invalid-credential' ? 'Incorrect password.' : 'Something went wrong.', false); }
+    });
+
+    document.getElementById('btn-delete-account').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const pw = document.getElementById('settings-delete-password').value;
+      if (!pw) { setMsg('settings-delete-msg', 'Please enter your password.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+        await deleteUser(user);
+      } catch (e) { setMsg('settings-delete-msg', e.code === 'auth/invalid-credential' ? 'Incorrect password.' : 'Something went wrong.', false); }
+    });
+
+    document.querySelectorAll('.btn-pw-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? 'show' : 'hide';
+      });
+    });
+
+    // ── Home (SSO back to Hielluo) ──
+    document.getElementById('btn-home').addEventListener('click', async e => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) { window.location.href = '/'; return; }
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/auth/custom-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) });
+        const { customToken } = await res.json();
+        window.location.href = `/?sso=${encodeURIComponent(customToken)}`;
+      } catch { window.location.href = '/'; }
+    });
+
+    // ── Sign out ──
+    document.getElementById('btn-signout').addEventListener('click', async () => { await fbSignOut(auth); window.location.href = '/'; });
+
     let currentChatId = null;
     let currentMessages = [];
     let isResponding = false;
