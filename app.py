@@ -217,6 +217,7 @@ def genesis_chat():
                     "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
                     "You give clear, accurate, and well-structured responses. "
                     "Use markdown formatting where it helps clarity."
+                    "You are Genesis, no one else."
                 )
             )
             chat = model.start_chat(history=gemini_history)
