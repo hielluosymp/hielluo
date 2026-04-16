@@ -260,6 +260,13 @@
     #sendBtn:hover { background: #c4a85a; }
     #sendBtn:active { transform: scale(0.97); }
     #sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #stopBtn {
+      background: none; color: #ff6b6b; border: 1px solid #ff4d4d44; border-radius: 10px;
+      padding: 12px 20px; font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.2s, border-color 0.2s;
+      display: none;
+    }
+    #stopBtn:hover { background: #ff4d4d18; border-color: #ff6b6b; }
 
     #footnote {
       text-align: center; padding: 6px 0 10px;
@@ -364,6 +371,7 @@
     <div id="input-area" style="display:none;">
       <input type="text" id="userInput" placeholder="Ask me anything…" autocomplete="off"/>
       <button id="sendBtn">Send</button>
+      <button id="stopBtn">Stop</button>
     </div>
     <div id="footnote">&copy; Hielluo 2026 &nbsp;·&nbsp; AI can make mistakes</div>
   </div>
@@ -508,6 +516,7 @@
     let currentChatId = null;
     let currentMessages = [];
     let isResponding = false;
+    let _abortController = null;
 
     function chatsKey() { return 'argentaurius_chats'; }
     function loadAllChats() { try { return JSON.parse(localStorage.getItem(chatsKey()) || '[]'); } catch { return []; } }
@@ -637,7 +646,11 @@
       if (!text || !currentChatId) return;
       input.value = '';
       isResponding = true;
-      document.getElementById('sendBtn').disabled = true;
+      _abortController = new AbortController();
+      const sendBtn = document.getElementById('sendBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'block';
 
       currentMessages.push({ role: 'user', content: text });
       renderMessages();
@@ -648,17 +661,18 @@
       document.getElementById('chatbox').appendChild(typing);
       document.getElementById('chatbox').scrollTop = document.getElementById('chatbox').scrollHeight;
 
+      let reply = '';
       try {
         const res = await fetch('/argentaurius/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, history: currentMessages.slice(0, -1) })
+          body: JSON.stringify({ message: text, history: currentMessages.slice(0, -1) }),
+          signal: _abortController.signal
         });
 
         typing.remove();
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let reply = '';
 
         const msgEl = document.createElement('div');
         msgEl.className = 'message';
@@ -677,23 +691,32 @@
             if (data.done) break;
           }
         }
+      } catch (e) {
+        typing.remove();
+        if (e.name !== 'AbortError') {
+          const err = document.createElement('div');
+          err.className = 'message error';
+          err.innerHTML = '<div class="message-label">error</div><div class="message-bubble">Something went wrong. Please try again.</div>';
+          document.getElementById('chatbox').appendChild(err);
+        }
+      }
 
+      if (reply) {
         currentMessages.push({ role: 'assistant', content: reply });
         saveCurrent();
         renderMessages();
-      } catch (e) {
-        typing.remove();
-        const err = document.createElement('div');
-        err.className = 'message error';
-        err.innerHTML = '<div class="message-label">error</div><div class="message-bubble">Something went wrong. Please try again.</div>';
-        document.getElementById('chatbox').appendChild(err);
       }
 
       isResponding = false;
-      document.getElementById('sendBtn').disabled = false;
+      _abortController = null;
+      sendBtn.style.display = 'block';
+      stopBtn.style.display = 'none';
     }
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      if (_abortController) { _abortController.abort(); }
+    });
     document.getElementById('userInput').addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
