@@ -392,9 +392,11 @@
     const _sso = new URLSearchParams(window.location.search).get('sso');
     if (_sso) { history.replaceState(null, '', window.location.pathname); signInWithCustomToken(auth, _sso).catch(() => {}); }
 
-    onAuthStateChanged(auth, user => {
-      if (!user) { window.location.href = '/'; return; }
-      populateUser(user);
+    auth.authStateReady().then(() => {
+      onAuthStateChanged(auth, user => {
+        if (!user) { window.location.href = '/'; return; }
+        populateUser(user);
+      });
     });
 
     function populateUser(user) {
