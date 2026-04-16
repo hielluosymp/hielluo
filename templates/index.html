@@ -520,7 +520,13 @@
         <!-- Tools -->
         <div id="section-tools" style="display:none">
           <div class="main-heading">Tools</div>
-          <div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Coming Soon!</div>
+          <div class="apps-grid">
+            <a class="app-card" href="/argentaurius" rel="noopener">
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-title">Argentaurius</div>
+              <div class="app-card-desc">Helpful Banker</div>
+            </a>
+          </div>
         </div>
       </main>
 
@@ -868,7 +874,7 @@
       function updateDisplay(secondsLeft) {
         const mins = Math.floor(secondsLeft / 60);
         const secs = secondsLeft % 60;
-        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} remaining`;
+        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} to verify`;
         countdownEl.style.color = secondsLeft <= 30 ? '#ff6b6b' : '#fff';
       }
       updateDisplay(180);
@@ -968,7 +974,8 @@
 
     // ── Search ──
     const ALL_APPS = [
-      { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' }
+      { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' },
+      { name: 'Argentaurius', desc: 'Helpful Banker', href: '/argentaurius', icon: '<img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/>' }
     ];
     window.searchApps = function(query) {
       const q = query.trim().toLowerCase();
@@ -994,13 +1001,13 @@
         return;
       }
       resultsSection.innerHTML = `<div class="main-heading">Results</div><div class="apps-grid">${results.map(a => `
-        <a class="app-card" href="#" onclick="${a.action}(event)" rel="noopener">
-          <div class="app-card-icon">
+        <a class="app-card" href="${a.href || '#'}" ${a.action ? `onclick="${a.action}(event)"` : ''} rel="noopener">
+          <div class="app-card-icon">${a.icon || `
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
               <line x1="14" y1="2" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
               <line x1="24" y1="8" x2="4" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
               <line x1="24" y1="20" x2="4" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
+            </svg>`}
           </div>
           <div class="app-card-title">${a.name}</div>
           <div class="app-card-desc">${a.desc}</div>
