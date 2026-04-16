@@ -363,6 +363,36 @@
     }
     #stopBtn:hover { background: #f8717110; border-color: #f87171; }
 
+    #model-selector-wrap {
+      display: flex; justify-content: center; padding: 0 20px 6px;
+    }
+    #model-btn {
+      background: none; border: 1px solid var(--border); border-radius: 20px;
+      color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.75rem;
+      padding: 5px 12px; cursor: pointer; transition: color 0.12s, border-color 0.12s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #model-btn:hover { color: var(--accent); border-color: var(--accent); }
+    #model-btn .chevron { font-size: 0.6rem; transition: transform 0.15s; }
+    #model-btn.open .chevron { transform: rotate(180deg); }
+
+    #model-dropdown {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: var(--sidebar); border: 1px solid var(--border); border-radius: 12px;
+      padding: 6px; min-width: 180px; box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; gap: 2px; z-index: 50;
+    }
+    #model-dropdown.open { display: flex; }
+    .model-option {
+      padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+      color: var(--text-muted); transition: background 0.12s, color 0.12s;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .model-option:hover { background: var(--surface); color: var(--text); }
+    .model-option.selected { background: var(--surface); color: var(--accent); }
+    .model-option-name { font-weight: 500; }
+    .model-option-desc { font-size: 0.68rem; color: var(--text-muted); }
+
     #footnote {
       text-align: center; padding: 0 0 12px;
       font-size: 0.62rem; color: var(--text-faint);
@@ -473,6 +503,20 @@
           <div class="chip" onclick="useChip(this)">Help me debug code</div>
           <div class="chip" onclick="useChip(this)">Summarise a topic</div>
           <div class="chip" onclick="useChip(this)">Draft an email</div>
+        </div>
+      </div>
+    </div>
+    <div id="model-selector-wrap">
+      <div style="position:relative;">
+        <button id="model-btn" onclick="toggleModelDropdown()">
+          <span id="model-btn-label">Genesis 1.0</span>
+          <span class="chevron">▲</span>
+        </button>
+        <div id="model-dropdown">
+          <div class="model-option selected" data-model="genesis-1.0" onclick="selectModel(this)">
+            <span class="model-option-name">Genesis 1.0</span>
+            <span class="model-option-desc">Gemini 2.5 Flash · Fast &amp; capable</span>
+          </div>
         </div>
       </div>
     </div>
@@ -629,6 +673,44 @@
     let currentMessages = [];
     let isResponding = false;
     let _abort = null;
+    let selectedModel = localStorage.getItem('genesis_model') || 'genesis-1.0';
+
+    // ── Model selector ──
+    const MODEL_MAP = {
+      'genesis-1.0': 'gemini-2.5-flash',
+    };
+
+    function applySelectedModel() {
+      document.querySelectorAll('.model-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.model === selectedModel);
+      });
+      const opt = document.querySelector(`.model-option[data-model="${selectedModel}"]`);
+      document.getElementById('model-btn-label').textContent = opt ? opt.querySelector('.model-option-name').textContent : selectedModel;
+    }
+
+    window.toggleModelDropdown = function() {
+      const btn = document.getElementById('model-btn');
+      const dd = document.getElementById('model-dropdown');
+      btn.classList.toggle('open');
+      dd.classList.toggle('open');
+    };
+
+    window.selectModel = function(el) {
+      selectedModel = el.dataset.model;
+      localStorage.setItem('genesis_model', selectedModel);
+      applySelectedModel();
+      document.getElementById('model-btn').classList.remove('open');
+      document.getElementById('model-dropdown').classList.remove('open');
+    };
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#model-selector-wrap')) {
+        document.getElementById('model-btn').classList.remove('open');
+        document.getElementById('model-dropdown').classList.remove('open');
+      }
+    });
+
+    applySelectedModel();
 
     function chatsKey() { return 'genesis_chats'; }
     function loadAll() { try { return JSON.parse(localStorage.getItem(chatsKey()) || '[]'); } catch { return []; } }
@@ -785,7 +867,7 @@
         const res = await fetch('/genesis/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, history: currentMessages.slice(0, -1) }),
+          body: JSON.stringify({ message: text, history: currentMessages.slice(0, -1), model: selectedModel }),
           signal: _abort.signal
         });
         typing.remove();

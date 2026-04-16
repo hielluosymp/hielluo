@@ -198,6 +198,12 @@ def genesis_chat():
     user_message = data["message"].strip()
     history = data.get("history", [])
 
+    model_alias = data.get("model", "genesis-1.0")
+    model_map = {
+        "genesis-1.0": "gemini-2.5-flash",
+    }
+    gemini_model = model_map.get(model_alias, "gemini-2.5-flash")
+
     gemini_history = []
     for msg in history:
         role = "user" if msg["role"] == "user" else "model"
@@ -206,7 +212,7 @@ def genesis_chat():
     def generate():
         try:
             model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash",
+                model_name=gemini_model,
                 system_instruction=(
                     "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
                     "You give clear, accurate, and well-structured responses. "
