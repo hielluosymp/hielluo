@@ -176,6 +176,15 @@ def argentaurius_chat():
                     headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
 
+@app.route("/genesis/models")
+def genesis_models():
+    try:
+        models = [m.name for m in genai.list_models() if "generateContent" in m.supported_generation_methods]
+        return jsonify({"models": models})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/genesis")
 def genesis():
     return render_template("chatbots/genesis.html")
@@ -197,7 +206,7 @@ def genesis_chat():
     def generate():
         try:
             model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
+                model_name="gemini-pro",
                 system_instruction=(
                     "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
                     "You give clear, accurate, and well-structured responses. "
