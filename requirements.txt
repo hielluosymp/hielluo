@@ -2,3 +2,4 @@ flask
 firebase-admin
 cohere
 requests
+google-generativeai

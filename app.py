@@ -6,6 +6,10 @@ import firebase_admin
 from firebase_admin import credentials, auth
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 import cohere
+import google.generativeai as genai
+
+if os.environ.get("GEMINI_API_KEY"):
+    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 _sa = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
 cred = credentials.Certificate(json.loads(_sa) if _sa else "serviceAccountKey.json")
@@ -164,6 +168,47 @@ def argentaurius_chat():
                         yield f"data: {json.dumps({'chunk': event.delta.message.content.text})}\n\n"
                 except AttributeError:
                     pass
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return Response(stream_with_context(generate()), content_type='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+
+@app.route("/genesis")
+def genesis():
+    return render_template("chatbots/genesis.html")
+
+
+@app.route("/genesis/chat", methods=["POST"])
+def genesis_chat():
+    data = request.json
+    if not data or not data.get("message", "").strip():
+        return jsonify({"error": "Message is required"}), 400
+    user_message = data["message"].strip()
+    history = data.get("history", [])
+
+    gemini_history = []
+    for msg in history:
+        role = "user" if msg["role"] == "user" else "model"
+        gemini_history.append({"role": role, "parts": [{"text": msg["content"]}]})
+
+    def generate():
+        try:
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                system_instruction=(
+                    "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
+                    "You give clear, accurate, and well-structured responses. "
+                    "Use markdown formatting where it helps clarity."
+                )
+            )
+            chat = model.start_chat(history=gemini_history)
+            response = chat.send_message(user_message, stream=True)
+            for chunk in response:
+                if chunk.text:
+                    yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
