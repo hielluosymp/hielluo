@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Genesis</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2318181b'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='Inter,sans-serif' font-weight='700' fill='%231188aa'>G</text></svg>"/>
+  <link rel="icon" type="image/png" href="/static/genesis.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -375,7 +375,9 @@
   <div id="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-brand">
-        <div class="brand-icon">G</div>
+        <div class="brand-icon" style="background:none;padding:0;">
+          <img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:7px;object-fit:cover;display:block;"/>
+        </div>
         <span class="brand-name">Genesis</span>
       </div>
       <button class="btn-new-chat" onclick="newChat()">
@@ -462,7 +464,7 @@
     <button id="scroll-btn" title="Jump to bottom">↓</button>
     <div id="chatbox">
       <div id="empty-state">
-        <div class="empty-logo">G</div>
+        <div class="empty-logo" style="background:none;padding:0;"><img src="/static/genesis.png" alt="Genesis" style="width:52px;height:52px;border-radius:14px;object-fit:cover;display:block;"/></div>
         <div class="empty-title">What can I help with?</div>
         <div class="empty-subtitle">Ask anything — Genesis is a general-purpose AI assistant ready to help.</div>
         <div class="empty-chips">
@@ -692,7 +694,7 @@
       const box = document.getElementById('chatbox');
       if (!currentMessages.length) {
         box.innerHTML = `<div id="empty-state">
-          <div class="empty-logo">G</div>
+          <div class="empty-logo" style="background:none;padding:0;"><img src="/static/genesis.png" alt="Genesis" style="width:52px;height:52px;border-radius:14px;object-fit:cover;display:block;"/></div>
           <div class="empty-title">What can I help with?</div>
           <div class="empty-subtitle">Ask anything — Genesis is a general-purpose AI assistant ready to help.</div>
           <div class="empty-chips">
