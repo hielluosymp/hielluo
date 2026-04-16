@@ -206,7 +206,7 @@ def genesis_chat():
     def generate():
         try:
             model = genai.GenerativeModel(
-                model_name="gemini-pro",
+                model_name="gemini-2.5-flash",
                 system_instruction=(
                     "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
                     "You give clear, accurate, and well-structured responses. "
