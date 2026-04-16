@@ -206,8 +206,9 @@
       width: 40px; height: 40px; border-radius: 10px;
       background: var(--surface2); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1.1rem; overflow: hidden; flex-shrink: 0;
     }
+    .app-card-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .app-card-title {
       font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--text);
     }
@@ -473,12 +474,12 @@
               <div class="app-card-desc">AI chat powered by the latest models.</div>
             </a>
             <a class="app-card" href="/argentaurius" rel="noopener">
-              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
             <a class="app-card" href="/genesis" rel="noopener">
-              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
             </a>
@@ -509,12 +510,12 @@
               <div class="app-card-desc">AI chat powered by the latest models.</div>
             </a>
             <a class="app-card" href="/argentaurius" rel="noopener">
-              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
             <a class="app-card" href="/genesis" rel="noopener">
-              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
             </a>
@@ -532,12 +533,12 @@
           <div class="main-heading">Tools</div>
           <div class="apps-grid">
             <a class="app-card" href="/argentaurius" rel="noopener">
-              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
             <a class="app-card" href="/genesis" rel="noopener">
-              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/></div>
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
             </a>
@@ -990,8 +991,8 @@
     // ── Search ──
     const ALL_APPS = [
       { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' },
-      { name: 'Argentaurius', desc: 'AI chatbot powered banker', href: '/argentaurius', icon: '<img src="/static/argentaurius.png" alt="Argentaurius" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/>' },
-      { name: 'Genesis', desc: "Hielluo's most powerful model yet", href: '/genesis', icon: '<img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:6px;object-fit:cover;"/>' }
+      { name: 'Argentaurius', desc: 'AI chatbot powered banker', href: '/argentaurius', icon: '<img src="/static/argentaurius.png" alt="Argentaurius"/>' },
+      { name: 'Genesis', desc: "Hielluo's most powerful model yet", href: '/genesis', icon: '<img src="/static/genesis.png" alt="Genesis"/>' }
     ];
     window.searchApps = function(query) {
       const q = query.trim().toLowerCase();

@@ -266,6 +266,14 @@
       margin: 0.5em 0; position: relative;
     }
     .msg-body pre code { font-size: 0.83rem; }
+    .cursor {
+      display: inline-block; width: 2px; height: 1em;
+      background: var(--accent); margin-left: 2px;
+      vertical-align: text-bottom; border-radius: 1px;
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
     .copy-btn {
       position: absolute; top: 8px; right: 10px;
       background: var(--surface); border: 1px solid var(--border); border-radius: 5px;
@@ -880,6 +888,10 @@
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
+        // Show plain text + cursor during streaming
+        body.style.whiteSpace = 'pre-wrap';
+        body.innerHTML = '<span class="cursor"></span>';
+        const cursorEl = body.querySelector('.cursor');
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -888,12 +900,12 @@
             const data = JSON.parse(line.slice(5).trim());
             if (data.chunk) {
               reply += data.chunk;
-              body.innerHTML = renderMd(reply);
-              body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-              attachCopyBtns();
+              body.firstChild.textContent = reply;
+              body.scrollTop = body.scrollHeight;
               box.scrollTop = box.scrollHeight;
             }
             if (data.error) {
+              body.style.whiteSpace = '';
               body.innerHTML = `<span style="color:#f87171">${escHtml(data.error)}</span>`;
               box.scrollTop = box.scrollHeight;
               break;
@@ -901,6 +913,12 @@
             if (data.done) break;
           }
         }
+        // Render markdown now that streaming is complete
+        body.style.whiteSpace = '';
+        body.innerHTML = renderMd(reply);
+        body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+        attachCopyBtns();
+        box.scrollTop = box.scrollHeight;
       } catch (e) {
         typing.remove();
         if (e.name !== 'AbortError') {
