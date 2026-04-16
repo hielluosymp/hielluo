@@ -197,7 +197,7 @@ def genesis_chat():
     def generate():
         try:
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name="gemini-1.5-flash",
                 system_instruction=(
                     "You are Genesis, a helpful, thoughtful, and capable AI assistant. "
                     "You give clear, accurate, and well-structured responses. "
@@ -207,8 +207,11 @@ def genesis_chat():
             chat = model.start_chat(history=gemini_history)
             response = chat.send_message(user_message, stream=True)
             for chunk in response:
-                if chunk.text:
-                    yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
+                try:
+                    if chunk.text:
+                        yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
+                except Exception:
+                    pass
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"

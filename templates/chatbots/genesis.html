@@ -809,6 +809,11 @@
               attachCopyBtns();
               box.scrollTop = box.scrollHeight;
             }
+            if (data.error) {
+              body.innerHTML = `<span style="color:#f87171">${escHtml(data.error)}</span>`;
+              box.scrollTop = box.scrollHeight;
+              break;
+            }
             if (data.done) break;
           }
         }
