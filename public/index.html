@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hielluo</title>
+  <link rel="icon" type="image/png" href="/static/logo.png?v=2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@700;800&family=Inter:wght@300;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --surface: #17171a;
+      --surface2: #1e1e24;
+      --border: #2a2a2f;
+      --accent: #1188aa;
+      --accent-dim: #0d6a85;
+      --text: #f0f0f0;
+      --text-muted: #555;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── AUTH SCREEN ── */
+    #auth-screen {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 100; display: flex;
+      align-items: center; justify-content: center;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .auth-logo svg { flex-shrink: 0; }
+    .auth-logo h1 { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 1.55rem; color: #fff; letter-spacing: 0.01em; }
+
+    .auth-tabs {
+      display: flex; background: var(--bg); border-radius: 10px; padding: 4px;
+    }
+    .auth-tab {
+      flex: 1; padding: 8px; text-align: center; cursor: pointer;
+      border-radius: 8px; font-size: 0.8rem; color: var(--text-muted); transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--surface2); color: var(--text); }
+
+    .auth-input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 16px; color: var(--text); font-family: 'DM Mono', monospace;
+      font-size: 0.85rem; outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .auth-input:focus { border-color: var(--accent); }
+    .auth-input::placeholder { color: var(--text-muted); }
+
+    .btn-primary {
+      background: var(--accent); color: #0d0d0f; border: none; border-radius: 10px;
+      padding: 13px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+      cursor: pointer; transition: background 0.2s, transform 0.1s; width: 100%;
+    }
+    .btn-primary:hover { background: #14a0c8; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-google {
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 0.85rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: background 0.2s; width: 100%;
+    }
+    .btn-google:hover { background: #27272e; }
+
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--text-muted); font-size: 0.75rem;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .auth-error { color: #ff6b6b; font-size: 0.78rem; text-align: center; min-height: 18px; }
+
+    /* ── MAIN APP ── */
+    #app { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    #app.visible { display: flex; flex-direction: column; }
+
+    /* ── HEADER ── */
+    #app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; height: 60px; border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; }
+    .header-logo span { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 1.4rem; color: #fff; letter-spacing: 0.01em; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem;
+      flex-shrink: 0; overflow: hidden; cursor: pointer;
+      transition: opacity 0.15s; color: #fff;
+    }
+    .user-avatar:hover { opacity: 0.8; }
+    .user-avatar img, .settings-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .user-name { font-size: 0.8rem; color: var(--text); }
+    .btn-signout {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 0.72rem; padding: 7px 10px;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-signout:hover { color: #ff6b6b; border-color: #ff6b6b44; }
+    .btn-settings {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-muted); font-size: 0.72rem; padding: 7px 10px;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-settings:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── BODY LAYOUT ── */
+    #app-body {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 220px; background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+      padding: 20px 12px; gap: 4px; overflow-y: auto;
+    }
+    #sidebar::-webkit-scrollbar { width: 3px; }
+    #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .sidebar-section-label {
+      font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.12em; padding: 14px 10px 6px;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 10px; border-radius: 8px; font-size: 0.85rem;
+      color: var(--text-muted); cursor: pointer; text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-link:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-link.active { background: var(--surface2); color: var(--text); }
+
+    /* ── SEARCH ── */
+    #search-bar {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 16px; color: var(--text);
+      font-family: 'DM Mono', monospace; font-size: 0.85rem; outline: none;
+      transition: border-color 0.2s; margin-bottom: 24px;
+    }
+    #search-bar:focus { border-color: var(--accent); }
+    #search-bar::placeholder { color: var(--text-muted); }
+    .no-results { color: var(--text-muted); font-size: 0.8rem; }
+
+    /* ── MAIN ── */
+    #app-main {
+      flex: 1; overflow-y: auto; padding: 32px 36px;
+    }
+    #app-main::-webkit-scrollbar { width: 4px; }
+    #app-main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .main-heading {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem;
+      color: var(--text); margin-bottom: 20px;
+    }
+    .apps-grid {
+      display: flex; flex-wrap: wrap; gap: 16px;
+    }
+    .app-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 22px 20px; width: 200px; cursor: pointer; text-decoration: none;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .app-card:hover { border-color: var(--accent); background: var(--surface2); }
+    .app-card-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; overflow: hidden; flex-shrink: 0;
+    }
+    .app-card-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .app-card-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--text);
+    }
+    .app-card-desc {
+      font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    #app-footer {
+      padding: 14px 28px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.65rem; color: rgba(255,255,255,0.25); flex-shrink: 0;
+    }
+
+    /* ── ACCOUNT SETTINGS MODAL ── */
+    #settings-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 200; display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #settings-modal.visible { display: flex; }
+    .settings-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 32px; width: 100%; max-width: 420px;
+      display: flex; flex-direction: column; gap: 20px;
+      animation: fadeUp 0.3s ease;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .settings-box::-webkit-scrollbar { width: 3px; }
+    .settings-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .settings-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .settings-header h2 {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: #fff;
+    }
+    .btn-close {
+      background: none; border: none; color: var(--text-muted); font-size: 1.2rem;
+      cursor: pointer; padding: 4px; transition: color 0.15s; line-height: 1;
+    }
+    .btn-close:hover { color: var(--text); }
+    .settings-avatar-row {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .settings-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem;
+      flex-shrink: 0; overflow: hidden; color: #fff;
+    }
+    .settings-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .settings-user-info { flex: 1; }
+    .settings-user-info .name { font-size: 0.95rem; font-weight: 700; color: var(--text); font-family: 'Syne', sans-serif; }
+    .settings-user-info .email { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .settings-section-label {
+      font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.1em; margin-bottom: -10px;
+    }
+    .settings-input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 14px; color: var(--text); font-family: 'DM Mono', monospace;
+      font-size: 0.85rem; outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .settings-input:focus { border-color: var(--accent); }
+    .settings-input::placeholder { color: var(--text-muted); }
+    .settings-row { display: flex; gap: 10px; }
+    .settings-pw-field { position: relative; display: flex; align-items: center; width: 100%; }
+    .settings-pw-field .settings-input { padding-right: 52px; }
+    .btn-pw-toggle {
+      position: absolute; right: 10px;
+      background: none; border: none; color: var(--text-muted);
+      font-size: 0.7rem; cursor: pointer; font-family: 'DM Mono', monospace;
+      padding: 4px; transition: color 0.15s; line-height: 1;
+    }
+    .btn-pw-toggle:hover { color: var(--text); }
+    .settings-forgot {
+      font-size: 0.72rem; color: var(--text-muted); text-decoration: none;
+      transition: color 0.15s;
+    }
+    .settings-forgot:hover { color: var(--accent); }
+    .btn-settings-save {
+      background: var(--accent); color: #0d0d0f; border: none; border-radius: 10px;
+      padding: 11px 20px; font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-settings-save:hover { background: #14a0c8; }
+    .settings-divider { height: 1px; background: var(--border); }
+    .settings-danger {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .settings-danger-label { font-size: 0.8rem; color: var(--text-muted); }
+    .btn-danger {
+      background: none; border: 1px solid #ff4d4d44; border-radius: 8px;
+      color: #ff6b6b; font-size: 0.75rem; padding: 7px 14px;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-danger:hover { background: #ff4d4d18; border-color: #ff6b6b; }
+    .settings-msg { font-size: 0.75rem; text-align: center; min-height: 16px; color: var(--accent); }
+
+    /* ── VERIFY BANNER ── */
+    #verify-banner {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 100; display: none; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      text-align: center; padding: 40px;
+    }
+    #verify-banner h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; color: #fff; }
+    #verify-banner p { font-size: 0.82rem; color: var(--text-muted); max-width: 340px; line-height: 1.6; }
+    .btn-resend {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-muted); font-size: 0.78rem; padding: 8px 16px;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-resend:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── INTRO ── */
+    #intro {
+      position: fixed; inset: 0; background: #000;
+      z-index: 1000; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+      transition: opacity 0.7s ease;
+    }
+    #intro.hidden { opacity: 0; pointer-events: none; }
+    #intro img {
+      width: 96px; height: 96px; border-radius: 22px; object-fit: cover;
+      animation: introScale 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    @keyframes introScale {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #intro h1 {
+      font-family: 'Inter', sans-serif; font-weight: 300; font-size: 2rem;
+      color: #fff; letter-spacing: 0.01em;
+      animation: introFadeUp 0.5s ease 0.3s both;
+    }
+    #intro p {
+      font-family: 'DM Mono', monospace; font-size: 0.85rem;
+      color: rgba(255,255,255,0.4); letter-spacing: 0.04em;
+      animation: introFadeUp 0.5s ease 0.5s both;
+    }
+    @keyframes introFadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .auth-box { padding: 32px 24px; }
+      #sidebar { display: none; }
+      #app-header { padding: 0 16px; }
+      #app-main { padding: 20px 16px; }
+      .app-card { width: 100%; }
+      .settings-box { padding: 24px 20px; margin: 0 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── INTRO ── -->
+  <div id="intro">
+    <img src="/static/logo.png?v=2" alt="Hielluo" />
+    <h1>Hielluo</h1>
+    <p>AI solutions for everyone</p>
+  </div>
+
+  <!-- ── VERIFY BANNER ── -->
+  <div id="verify-banner">
+    <h2>Check your email</h2>
+    <p>We sent a verification link to your email address. Please verify your email to continue.</p>
+    <div id="verify-countdown" style="font-size:1.1rem;font-family:'Syne',sans-serif;font-weight:800;color:#fff;min-height:28px;letter-spacing:0.04em;"></div>
+    <button class="btn-resend" id="btn-resend" onclick="resendVerification()">Resend email</button>
+    <button class="btn-resend" onclick="cancelVerification()">Back to sign in</button>
+    <div id="resend-msg" style="font-size:0.75rem;color:var(--accent);min-height:16px;"></div>
+  </div>
+
+  <!-- ── AUTH SCREEN ── -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <img src="/static/logo.png?v=2" alt="Hielluo" style="width:36px;height:36px;border-radius:8px;object-fit:cover;" />
+        <h1>Hielluo</h1>
+      </div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchTab('login')">Sign in</div>
+        <div class="auth-tab" onclick="switchTab('signup')">Sign up</div>
+      </div>
+
+      <input id="auth-first-name" class="auth-input" type="text" placeholder="first name" style="display:none" />
+      <input id="auth-last-name" class="auth-input" type="text" placeholder="last name" style="display:none" />
+      <input id="auth-email" class="auth-input" type="email" placeholder="email" />
+      <input id="auth-password" class="auth-input" type="password" placeholder="password" />
+
+      <button id="auth-submit" class="btn-primary" onclick="authSubmit()">Sign in</button>
+
+      <div class="auth-divider">or</div>
+
+      <button class="btn-google" onclick="googleSignIn()">
+        <svg width="16" height="16" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.1 0-9.5-3.3-11.2-7.9l-6.5 5C9.7 39.6 16.3 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.4 4.2-4.4 5.6l6.2 5.2C36.9 37 44 32 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ── -->
+  <div id="app">
+
+    <!-- Header -->
+    <header id="app-header">
+      <div class="header-logo">
+        <a href="#" onclick="showSection('all', document.querySelector('.sidebar-link'))" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+          <img src="/static/logo.png?v=2" alt="Hielluo" style="width:38px;height:38px;border-radius:8px;object-fit:cover;" />
+          <span>Hielluo</span>
+        </a>
+      </div>
+      <div class="header-right">
+        <span class="user-name" id="header-user-name"></span>
+        <div class="user-avatar" id="header-avatar" onclick="openSettings()"></div>
+        <button class="btn-settings" onclick="openSettings()">Settings</button>
+        <button class="btn-signout" onclick="signOut()">Sign out</button>
+      </div>
+    </header>
+
+    <!-- Body: sidebar + main -->
+    <div id="app-body">
+
+      <nav id="sidebar">
+        <div class="sidebar-section-label">Browse</div>
+        <a class="sidebar-link active" href="#" onclick="showSection('all', this)">All apps</a>
+        <a class="sidebar-link" href="#" onclick="showSection('recent', this)">Recent</a>
+        <div class="sidebar-section-label" style="margin-top:8px">Categories</div>
+        <a class="sidebar-link" href="#" onclick="showSection('ai', this)">AI</a>
+        <a class="sidebar-link" href="#" onclick="showSection('productivity', this)">Productivity</a>
+        <a class="sidebar-link" href="#" onclick="showSection('tools', this)">Tools</a>
+      </nav>
+
+      <main id="app-main">
+        <input id="search-bar" type="text" placeholder="Search apps…" oninput="searchApps(this.value)" />
+
+        <!-- All apps -->
+        <div id="section-all">
+          <div class="main-heading">Apps</div>
+          <div class="apps-grid">
+            <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+              <div class="app-card-icon">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                  <line x1="14" y1="2"  x2="14" y2="26"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="8"  x2="4"  y2="20"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="20" x2="4"  y2="8"   stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="app-card-title">ThatGPT</div>
+              <div class="app-card-desc">AI chat powered by the latest models.</div>
+            </a>
+            <a class="app-card" href="/argentaurius" rel="noopener">
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
+              <div class="app-card-title">Argentaurius</div>
+              <div class="app-card-desc">AI chatbot powered banker</div>
+            </a>
+            <a class="app-card" href="/genesis" rel="noopener">
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
+              <div class="app-card-title">Genesis</div>
+              <div class="app-card-desc">Hielluo's most powerful model yet</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Recent -->
+        <div id="section-recent" style="display:none">
+          <div class="main-heading">Recent</div>
+          <div class="apps-grid" id="recent-grid">
+            <div style="color:var(--text-muted);font-size:0.8rem;">No recently visited apps.</div>
+          </div>
+        </div>
+
+        <!-- AI -->
+        <div id="section-ai" style="display:none">
+          <div class="main-heading">AI</div>
+          <div class="apps-grid">
+            <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+              <div class="app-card-icon">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                  <line x1="14" y1="2"  x2="14" y2="26"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="8"  x2="4"  y2="20"  stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="24" y1="20" x2="4"  y2="8"   stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="app-card-title">ThatGPT</div>
+              <div class="app-card-desc">AI chat powered by the latest models.</div>
+            </a>
+            <a class="app-card" href="/argentaurius" rel="noopener">
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
+              <div class="app-card-title">Argentaurius</div>
+              <div class="app-card-desc">AI chatbot powered banker</div>
+            </a>
+            <a class="app-card" href="/genesis" rel="noopener">
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
+              <div class="app-card-title">Genesis</div>
+              <div class="app-card-desc">Hielluo's most powerful model yet</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Productivity -->
+        <div id="section-productivity" style="display:none">
+          <div class="main-heading">Productivity</div>
+          <div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">Coming Soon!</div>
+        </div>
+
+        <!-- Tools -->
+        <div id="section-tools" style="display:none">
+          <div class="main-heading">Tools</div>
+          <div class="apps-grid">
+            <a class="app-card" href="/argentaurius" rel="noopener">
+              <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
+              <div class="app-card-title">Argentaurius</div>
+              <div class="app-card-desc">AI chatbot powered banker</div>
+            </a>
+            <a class="app-card" href="/genesis" rel="noopener">
+              <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
+              <div class="app-card-title">Genesis</div>
+              <div class="app-card-desc">Hielluo's most powerful model yet</div>
+            </a>
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- Footer -->
+    <footer id="app-footer">
+      <span>© 2026 Hielluo</span>
+      <span>AI can make mistakes</span>
+    </footer>
+
+  </div>
+
+  <!-- ── SETTINGS MODAL ── -->
+  <div id="settings-modal">
+    <div class="settings-box">
+      <div class="settings-header">
+        <h2>Account settings</h2>
+        <button class="btn-close" onclick="closeSettings()">✕</button>
+      </div>
+
+      <div class="settings-avatar-row">
+        <div class="settings-avatar">N</div>
+        <div class="settings-user-info">
+          <div class="name">Nicholas</div>
+          <div class="email">nicholas@hielluo.com</div>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Display name</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input id="settings-display-name" class="settings-input" type="text" placeholder="Your name" />
+        <button class="btn-settings-save" id="btn-save-name">Save</button>
+      </div>
+      <div class="settings-msg" id="settings-name-msg"></div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Change password</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" placeholder="Current password" id="old-pw" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('old-pw', this)">show</button>
+      </div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" placeholder="New password" id="new-pw" autocomplete="new-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('new-pw', this)">show</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <a href="#" class="settings-forgot" id="settings-forgot-link">Forgot password?</a>
+        <button class="btn-settings-save" id="btn-save-password">Save</button>
+      </div>
+      <div class="settings-msg" id="settings-pw-msg"></div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Change email</div>
+      <input class="settings-input" type="email" id="settings-new-email" placeholder="New email address" autocomplete="email" />
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-email-password" placeholder="Current password to confirm" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('settings-email-password', this)">show</button>
+      </div>
+      <button class="btn-settings-save" id="btn-save-email">Save</button>
+      <div class="settings-msg" id="settings-email-msg"></div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section-label">Delete account</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">This permanently deletes your account.</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-delete-password" placeholder="Enter your password to confirm" autocomplete="current-password" />
+        <button class="btn-pw-toggle" onclick="togglePw('settings-delete-password', this)">show</button>
+      </div>
+      <button class="btn-danger" id="btn-delete-account" style="width:100%;padding:10px;">Delete my account</button>
+      <div class="settings-msg" id="settings-delete-msg"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut as fbSignOut,
+      GoogleAuthProvider,
+      signInWithPopup,
+      updateProfile,
+      updatePassword,
+      updateEmail,
+      sendPasswordResetEmail,
+      sendEmailVerification,
+      deleteUser,
+      signInWithCustomToken,
+      EmailAuthProvider,
+      reauthenticateWithCredential,
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5UX0bdvHs8kolEWrpJ9SG6md9-GcGvq4",
+      authDomain: "hielluo.firebaseapp.com",
+      projectId: "hielluo",
+      storageBucket: "hielluo.firebasestorage.app",
+      messagingSenderId: "925488019863",
+      appId: "1:925488019863:web:6171eac97352abed9bacd2",
+      measurementId: "G-H59J6Z3Z9P"
+    };
+
+    // ── Intro ──
+    setTimeout(() => {
+      const intro = document.getElementById('intro');
+      intro.classList.add('hidden');
+      setTimeout(() => intro.remove(), 700);
+    }, 3800);
+
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    // ── SSO: auto sign-in if redirected from ThatGPT ──
+    const _ssoToken = new URLSearchParams(window.location.search).get('sso');
+    if (_ssoToken) {
+      history.replaceState(null, '', window.location.pathname);
+      signInWithCustomToken(auth, _ssoToken).catch(() => {});
+    }
+
+    // ── Auth state ──
+    onAuthStateChanged(auth, user => {
+      const verifyBanner = document.getElementById('verify-banner');
+      if (user && (user.emailVerified || user.providerData[0]?.providerId === 'google.com')) {
+        verifyBanner.style.display = 'none';
+        populateUser(user);
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+      } else if (user && !user.emailVerified) {
+        verifyBanner.style.display = 'flex';
+        document.getElementById('app').classList.remove('visible');
+        document.getElementById('auth-screen').style.display = 'none';
+      } else {
+        verifyBanner.style.display = 'none';
+        document.getElementById('app').classList.remove('visible');
+        document.getElementById('auth-screen').style.display = 'flex';
+      }
+    });
+
+    function populateUser(user) {
+      const name = user.displayName || (user.email ? user.email.split('@')[0] : '');
+      const email = user.email || '';
+      const initial = name ? name.charAt(0).toUpperCase() : 'U';
+
+      // Prefer `user.photoURL` (Firebase) or providerData photoURL fallback
+      const providerPhoto = (user.providerData && user.providerData.length && user.providerData[0].photoURL) ? user.providerData[0].photoURL : '';
+      const photo = user.photoURL || providerPhoto || '';
+
+      // Header avatar (image if photo available, otherwise initials)
+      const headerAvatar = document.getElementById('header-avatar');
+      headerAvatar.title = name || 'User';
+      if (photo) {
+        headerAvatar.innerHTML = `<img src="${photo}" alt="${name || 'Profile'}">`;
+      } else {
+        headerAvatar.textContent = initial;
+      }
+
+      document.getElementById('header-user-name').textContent = name;
+      // Settings avatar
+      const settingsAvatarEl = document.querySelector('.settings-avatar');
+      if (photo) {
+        settingsAvatarEl.innerHTML = `<img src="${photo}" alt="${name || 'Profile'}">`;
+      } else {
+        settingsAvatarEl.textContent = initial;
+      }
+      document.querySelector('.settings-user-info .name').textContent = name;
+      document.querySelector('.settings-user-info .email').textContent = email;
+      document.querySelector('#settings-display-name').value = name;
+    }
+
+    function setAuthError(msg) {
+      document.querySelector('.auth-error').textContent = msg;
+    }
+
+    // ── Tab switching ──
+    let currentTab = 'login';
+    window.switchTab = function(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.auth-tab').forEach((el, i) => {
+        el.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'signup' && i === 1));
+      });
+      document.getElementById('auth-submit').textContent = tab === 'login' ? 'Sign in' : 'Create account';
+      const isSignup = tab === 'signup';
+      document.getElementById('auth-first-name').style.display = isSignup ? 'block' : 'none';
+      document.getElementById('auth-last-name').style.display = isSignup ? 'block' : 'none';
+      setAuthError('');
+    };
+
+    // ── Email/password auth ──
+    window.authSubmit = async function() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const firstName = document.getElementById('auth-first-name').value.trim();
+      const lastName = document.getElementById('auth-last-name').value.trim();
+      const name = firstName && lastName ? `${firstName} ${lastName}` : (firstName || lastName);
+      setAuthError('');
+      if (!email || !password) { setAuthError('Please fill in all fields.'); return; }
+      if (currentTab === 'signup' && !firstName) { setAuthError('Please enter your first name.'); return; }
+      if (currentTab === 'signup' && !lastName) { setAuthError('Please enter your last name.'); return; }
+      try {
+        if (currentTab === 'login') {
+          await signInWithEmailAndPassword(auth, email, password);
+        } else {
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(cred.user, { displayName: name });
+          await sendEmailVerification(cred.user);
+          startVerificationCountdown(cred.user);
+        }
+      } catch (err) {
+        setAuthError(friendlyError(err.code));
+      }
+    };
+
+    // ── Google sign-in ──
+    window.googleSignIn = async function() {
+      setAuthError('');
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (err) {
+        if (err.code !== 'auth/popup-closed-by-user') setAuthError(friendlyError(err.code));
+      }
+    };
+
+    // ── Sign out ──
+    window.signOut = async function() {
+      await fbSignOut(auth);
+    };
+
+    // ── Settings modal ──
+    window.openSettings = function() { document.getElementById('settings-modal').classList.add('visible'); }
+    window.closeSettings = function() { document.getElementById('settings-modal').classList.remove('visible'); }
+    document.getElementById('settings-modal').addEventListener('click', function(e) {
+      if (e.target === this) window.closeSettings();
+    });
+
+    function setMsg(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.style.color = ok ? 'var(--accent)' : '#ff6b6b';
+      el.textContent = text;
+    }
+
+    // ── Save display name ──
+    document.getElementById('btn-save-name').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const newName = document.getElementById('settings-display-name').value.trim();
+      if (!newName) { setMsg('settings-name-msg', 'Please enter a name.', false); return; }
+      try {
+        await updateProfile(user, { displayName: newName });
+        populateUser(auth.currentUser);
+        setMsg('settings-name-msg', 'Saved.');
+      } catch (err) { setMsg('settings-name-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Save password ──
+    document.getElementById('btn-save-password').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const oldPw = document.getElementById('old-pw').value;
+      const newPw = document.getElementById('new-pw').value;
+      if (!oldPw || !newPw) { setMsg('settings-pw-msg', 'Please fill in all fields.', false); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, oldPw);
+        await reauthenticateWithCredential(user, cred);
+        await updatePassword(user, newPw);
+        document.getElementById('old-pw').value = '';
+        document.getElementById('new-pw').value = '';
+        setMsg('settings-pw-msg', 'Password updated.');
+      } catch (err) { setMsg('settings-pw-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Forgot password ──
+    document.getElementById('settings-forgot-link').addEventListener('click', async e => {
+      e.preventDefault();
+      const user = auth.currentUser; if (!user) return;
+      try {
+        await sendPasswordResetEmail(auth, user.email);
+        setMsg('settings-pw-msg', 'Reset email sent.');
+      } catch (err) { setMsg('settings-pw-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Save email ──
+    document.getElementById('btn-save-email').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const newEmail = document.getElementById('settings-new-email').value.trim();
+      const pw = document.getElementById('settings-email-password').value;
+      if (!newEmail || !pw) { setMsg('settings-email-msg', 'Please fill in all fields.', false); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, pw);
+        await reauthenticateWithCredential(user, cred);
+        await updateEmail(user, newEmail);
+        await sendEmailVerification(user);
+        document.getElementById('settings-new-email').value = '';
+        document.getElementById('settings-email-password').value = '';
+        setMsg('settings-email-msg', 'Email updated. Verify your new address.');
+        populateUser(auth.currentUser);
+      } catch (err) { setMsg('settings-email-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Delete account ──
+    document.getElementById('btn-delete-account').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const pw = document.getElementById('settings-delete-password').value;
+      if (!pw) { setMsg('settings-delete-msg', 'Please enter your password.', false); return; }
+      try {
+        const cred = EmailAuthProvider.credential(user.email, pw);
+        await reauthenticateWithCredential(user, cred);
+        await deleteUser(user);
+      } catch (err) { setMsg('settings-delete-msg', friendlyError(err.code), false); }
+    });
+
+    // ── Password toggle ──
+    window.togglePw = function(id, btn) {
+      const input = document.getElementById(id);
+      if (input.type === 'password') { input.type = 'text'; btn.textContent = 'hide'; }
+      else { input.type = 'password'; btn.textContent = 'show'; }
+    };
+
+    // ── Auth enter key ──
+    document.getElementById('auth-password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.authSubmit();
+    });
+
+    // ── Verification countdown ──
+    let _pendingVerifyUser = null;
+    let _verifyInterval = null;
+    let _resendCooldown = null;
+    let _resendReadyAt = 0;
+
+    function startVerificationCountdown(user) {
+      _pendingVerifyUser = user;
+      const expiresAt = Date.now() + 180_000;
+      let lastPollAt = Date.now();
+      const countdownEl = document.getElementById('verify-countdown');
+      const resendBtn = document.getElementById('btn-resend');
+
+      function updateDisplay(secondsLeft) {
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')} to verify`;
+        countdownEl.style.color = secondsLeft <= 30 ? '#ff6b6b' : '#fff';
+      }
+      updateDisplay(180);
+
+      // Start resend cooldown from first send
+      _resendReadyAt = Date.now() + 120_000;
+      resendBtn.disabled = true;
+      let resendRemaining = 120;
+      resendBtn.textContent = `Resend (${resendRemaining}s)`;
+      _resendCooldown = setInterval(() => {
+        resendRemaining--;
+        if (resendRemaining <= 0) {
+          clearInterval(_resendCooldown); _resendCooldown = null;
+          resendBtn.disabled = false; resendBtn.textContent = 'Resend email';
+        } else {
+          resendBtn.textContent = `Resend (${resendRemaining}s)`;
+        }
+      }, 1000);
+
+      _verifyInterval = setInterval(async () => {
+        const now = Date.now();
+        const secondsLeft = Math.max(0, Math.round((expiresAt - now) / 1000));
+
+        if (now - lastPollAt >= 3000) {
+          lastPollAt = now;
+          try {
+            await user.reload();
+            if (user.emailVerified) {
+              clearInterval(_verifyInterval); _verifyInterval = null;
+              if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+              _pendingVerifyUser = null;
+              window.location.reload();
+              return;
+            }
+          } catch {}
+        }
+
+        if (secondsLeft <= 0) {
+          clearInterval(_verifyInterval); _verifyInterval = null;
+          if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+          try { await deleteUser(_pendingVerifyUser); } catch {}
+          _pendingVerifyUser = null;
+          await fbSignOut(auth).catch(() => {});
+          countdownEl.textContent = 'Time expired — please sign up again.';
+          countdownEl.style.color = '#ff6b6b';
+          document.getElementById('resend-msg').textContent = '';
+          resendBtn.disabled = true; resendBtn.textContent = 'Resend email';
+          return;
+        }
+        updateDisplay(secondsLeft);
+      }, 1000);
+    }
+
+    window.cancelVerification = async function() {
+      if (_verifyInterval) { clearInterval(_verifyInterval); _verifyInterval = null; }
+      if (_resendCooldown) { clearInterval(_resendCooldown); _resendCooldown = null; }
+      if (_pendingVerifyUser) {
+        try { await deleteUser(_pendingVerifyUser); } catch {}
+        _pendingVerifyUser = null;
+      }
+      await fbSignOut(auth).catch(() => {});
+      document.getElementById('verify-countdown').textContent = '';
+      document.getElementById('resend-msg').textContent = '';
+      const resendBtn = document.getElementById('btn-resend');
+      resendBtn.disabled = false; resendBtn.textContent = 'Resend email';
+    };
+
+    window.resendVerification = async function() {
+      const msg = document.getElementById('resend-msg');
+      const btn = document.getElementById('btn-resend');
+      const user = auth.currentUser || _pendingVerifyUser;
+      if (!user) return;
+      if (Date.now() < _resendReadyAt) return;
+      try {
+        await sendEmailVerification(user);
+        _resendReadyAt = Date.now() + 120_000;
+        msg.style.color = 'var(--accent)';
+        msg.textContent = 'Email sent!';
+        btn.disabled = true;
+        let remaining = 120;
+        btn.textContent = `Resend (${remaining}s)`;
+        if (_resendCooldown) clearInterval(_resendCooldown);
+        _resendCooldown = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(_resendCooldown); _resendCooldown = null;
+            btn.disabled = false; btn.textContent = 'Resend email';
+          } else {
+            btn.textContent = `Resend (${remaining}s)`;
+          }
+        }, 1000);
+      } catch {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = 'Please wait before trying again.';
+      }
+    };
+
+    // ── Search ──
+    const ALL_APPS = [
+      { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' },
+      { name: 'Argentaurius', desc: 'AI chatbot powered banker', href: '/argentaurius', icon: '<img src="/static/argentaurius.png" alt="Argentaurius"/>' },
+      { name: 'Genesis', desc: "Hielluo's most powerful model yet", href: '/genesis', icon: '<img src="/static/genesis.png" alt="Genesis"/>' }
+    ];
+    window.searchApps = function(query) {
+      const q = query.trim().toLowerCase();
+      const sections = document.querySelectorAll('#app-main > div');
+      const searchBar = document.getElementById('search-bar');
+      if (!q) {
+        sections.forEach(s => s.style.display = s.id === 'section-all' ? 'block' : 'none');
+        document.querySelectorAll('.sidebar-link').forEach((l, i) => l.classList.toggle('active', i === 0));
+        return;
+      }
+      sections.forEach(s => s.style.display = 'none');
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      const results = ALL_APPS.filter(a => a.name.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q));
+      let resultsSection = document.getElementById('section-search');
+      if (!resultsSection) {
+        resultsSection = document.createElement('div');
+        resultsSection.id = 'section-search';
+        document.getElementById('app-main').appendChild(resultsSection);
+      }
+      resultsSection.style.display = 'block';
+      if (!results.length) {
+        resultsSection.innerHTML = '<div class="no-results">No apps found.</div>';
+        return;
+      }
+      resultsSection.innerHTML = `<div class="main-heading">Results</div><div class="apps-grid">${results.map(a => `
+        <a class="app-card" href="${a.href || '#'}" ${a.action ? `onclick="${a.action}(event)"` : ''} rel="noopener">
+          <div class="app-card-icon">${a.icon || `
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <line x1="14" y1="2" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="8" x2="4" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="20" x2="4" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>`}
+          </div>
+          <div class="app-card-title">${a.name}</div>
+          <div class="app-card-desc">${a.desc}</div>
+        </a>`).join('')}</div>`;
+    };
+
+    // ── Sidebar navigation ──
+    window.showSection = function(name, el) {
+      event.preventDefault();
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('#app-main > div').forEach(s => s.style.display = 'none');
+      document.getElementById('section-' + name).style.display = 'block';
+    };
+
+    // ── Recent tracking ──
+    const RECENT_KEY = 'hielluo_recent';
+    function trackRecent(name, url) {
+      let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      recent = recent.filter(r => r.name !== name);
+      recent.unshift({ name, url });
+      recent = recent.slice(0, 6);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+      renderRecent();
+    }
+    function renderRecent() {
+      const recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      const grid = document.getElementById('recent-grid');
+      if (!recent.length) {
+        grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No recently visited apps.</div>';
+        return;
+      }
+      grid.innerHTML = recent.map(r => `
+        <a class="app-card" href="#" onclick="openThatGPT(event)" rel="noopener">
+          <div class="app-card-icon">
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+              <line x1="14" y1="2" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="8" x2="4" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="20" x2="4" y2="8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="app-card-title">${r.name}</div>
+          <div class="app-card-desc">AI chat powered by the latest models.</div>
+        </a>`).join('');
+    }
+    renderRecent();
+
+    // ── SSO redirect to ThatGPT ──
+    window.openThatGPT = async function(e) {
+      e.preventDefault();
+      const user = auth.currentUser;
+      trackRecent('ThatGPT', 'https://thatgptai.org');
+      if (!user) { window.open('https://thatgptai.org', '_blank'); return; }
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/auth/custom-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        const { customToken } = await res.json();
+        window.open(`https://thatgptai.org?sso=${encodeURIComponent(customToken)}`, '_blank');
+      } catch {
+        window.open('https://thatgptai.org', '_blank');
+      }
+    };
+
+    function friendlyError(code) {
+      const map = {
+        'auth/invalid-email': 'Invalid email address.',
+        'auth/user-not-found': 'No account with that email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/invalid-credential': 'Incorrect email or password.',
+        'auth/email-already-in-use': 'An account with that email already exists.',
+        'auth/weak-password': 'Password must be at least 6 characters.',
+        'auth/requires-recent-login': 'Please sign out and sign in again to do this.',
+        'auth/too-many-requests': 'Too many attempts. Try again later.',
+      };
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+  </script>
+</body>
+</html>

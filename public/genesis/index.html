@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Genesis</title>
+  <link rel="icon" type="image/png" href="/static/genesis.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #18181b;
+      --sidebar: #111113;
+      --surface: #27272a;
+      --surface2: #303034;
+      --border: #3f3f46;
+      --accent: #1188aa;
+      --accent-hover: #14a0c5;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --text-faint: #3f3f46;
+      --user-bubble: #232329;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      height: 100vh; overflow: hidden; display: flex;
+      font-size: 15px; line-height: 1.6;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 248px; background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+
+    .sidebar-top {
+      padding: 14px 12px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 8px;
+    }
+    .brand-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--surface); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; color: var(--accent); flex-shrink: 0;
+    }
+    .brand-name {
+      font-weight: 600; font-size: 0.95rem; color: var(--text); letter-spacing: -0.01em;
+    }
+
+    .btn-new-chat {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 9px 12px; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s; width: 100%;
+      text-align: left;
+    }
+    .btn-new-chat:hover { background: var(--surface2); border-color: var(--accent); }
+    .btn-new-chat .plus { color: var(--accent); font-size: 1rem; line-height: 1; }
+
+    .sidebar-section-label {
+      font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 8px 10px 2px;
+    }
+
+    #chat-list {
+      flex: 1; overflow-y: auto; padding: 2px 8px 8px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    #chat-list::-webkit-scrollbar { width: 3px; }
+    #chat-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .chat-item {
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .chat-item:hover { background: var(--surface); color: var(--text); }
+    .chat-item.active { background: var(--surface); color: var(--text); }
+    .chat-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-delete {
+      opacity: 0; font-size: 0.7rem; color: var(--text-muted);
+      background: none; border: none; cursor: pointer; padding: 2px 4px;
+      transition: opacity 0.12s, color 0.12s; flex-shrink: 0;
+    }
+    .chat-item:hover .chat-delete { opacity: 1; }
+    .chat-delete:hover { color: #f87171; }
+
+    .sidebar-footer {
+      padding: 10px 12px 14px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .user-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 8px; border-radius: 8px; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .user-row:hover { background: var(--surface); }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--surface2); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.78rem; flex-shrink: 0; overflow: hidden;
+      color: var(--accent);
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .user-info { flex: 1; overflow: hidden; }
+    .user-name { font-size: 0.82rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .footer-actions {
+      display: flex; gap: 6px;
+    }
+    .footer-btn {
+      flex: 1; background: none; border: 1px solid var(--border); border-radius: 7px;
+      color: var(--text-muted); font-size: 0.72rem; padding: 6px 8px;
+      cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none;
+      transition: color 0.12s, border-color 0.12s; text-align: center;
+    }
+    .footer-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .footer-btn.danger:hover { color: #f87171; border-color: #f8717144; }
+
+    /* ── SETTINGS MODAL ── */
+    #settings-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 200; display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+    #settings-modal.visible { display: flex; }
+    .settings-box {
+      background: var(--sidebar); border: 1px solid var(--border);
+      border-radius: 18px; padding: 32px 28px; width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; gap: 18px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .settings-box::-webkit-scrollbar { width: 3px; }
+    .settings-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; }
+    .settings-header h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .btn-close {
+      background: none; border: none; color: var(--text-muted); font-size: 1rem;
+      cursor: pointer; padding: 4px; transition: color 0.12s; line-height: 1;
+    }
+    .btn-close:hover { color: var(--text); }
+    .settings-avatar-row { display: flex; align-items: center; gap: 14px; }
+    .settings-avatar {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1.1rem; flex-shrink: 0; overflow: hidden; color: var(--accent);
+    }
+    .settings-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .s-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .s-email { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .settings-label {
+      font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .settings-input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
+      padding: 10px 13px; color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; outline: none; transition: border-color 0.15s; width: 100%;
+    }
+    .settings-input:focus { border-color: var(--accent); }
+    .settings-input::placeholder { color: var(--text-muted); }
+    .settings-pw-field { position: relative; display: flex; align-items: center; }
+    .settings-pw-field .settings-input { padding-right: 50px; }
+    .btn-pw-toggle {
+      position: absolute; right: 10px; background: none; border: none;
+      color: var(--text-muted); font-size: 0.68rem; cursor: pointer;
+      font-family: 'Inter', sans-serif; padding: 4px; transition: color 0.12s;
+    }
+    .btn-pw-toggle:hover { color: var(--text); }
+    .settings-forgot { font-size: 0.72rem; color: var(--text-muted); text-decoration: none; transition: color 0.12s; }
+    .settings-forgot:hover { color: var(--accent); }
+    .btn-save {
+      background: var(--accent); color: #0f0f12; border: none; border-radius: 9px;
+      padding: 10px 18px; font-family: 'Inter', sans-serif; font-weight: 600;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    .btn-save:hover { background: var(--accent-hover); }
+    .settings-divider { height: 1px; background: var(--border); }
+    .btn-danger-sm {
+      background: none; border: 1px solid #f8717144; border-radius: 8px;
+      color: #f87171; font-size: 0.75rem; padding: 8px 14px;
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.12s, border-color 0.12s;
+    }
+    .btn-danger-sm:hover { background: #f8717110; border-color: #f87171; }
+    .settings-msg { font-size: 0.74rem; text-align: center; min-height: 16px; color: var(--accent); }
+
+    /* ── MAIN AREA ── */
+    #main {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
+    }
+
+    #chatbox {
+      flex: 1; overflow-y: auto; padding: 32px 20px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+    }
+    #chatbox::-webkit-scrollbar { width: 4px; }
+    #chatbox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .msg-wrapper {
+      width: 100%; max-width: 700px;
+      display: flex; flex-direction: column; gap: 0;
+      animation: fadeUp 0.18s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* User message */
+    .msg-user {
+      display: flex; justify-content: flex-end; padding: 6px 0;
+    }
+    .msg-user-bubble {
+      background: var(--user-bubble); border: 1px solid var(--border);
+      border-radius: 16px 16px 4px 16px; padding: 11px 16px;
+      max-width: 75%; font-size: 0.9rem; line-height: 1.65; color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    /* Assistant message */
+    .msg-assistant {
+      padding: 14px 0 8px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .msg-label {
+      font-size: 0.7rem; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .msg-body {
+      font-size: 0.9rem; line-height: 1.75; color: var(--text);
+    }
+    .msg-body p { margin-bottom: 0.75em; }
+    .msg-body p:last-child { margin-bottom: 0; }
+    .msg-body h1, .msg-body h2, .msg-body h3 {
+      font-weight: 600; color: var(--text); margin: 1em 0 0.4em;
+    }
+    .msg-body h1 { font-size: 1.15rem; }
+    .msg-body h2 { font-size: 1.05rem; }
+    .msg-body h3 { font-size: 0.95rem; }
+    .msg-body ul, .msg-body ol { padding-left: 1.4em; margin-bottom: 0.75em; }
+    .msg-body li { margin-bottom: 0.25em; }
+    .msg-body strong { font-weight: 600; color: #f4f4f5; }
+    .msg-body em { font-style: italic; }
+    .msg-body a { color: var(--accent); text-decoration: underline; }
+    .msg-body code:not(pre code) {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 5px; padding: 1px 6px; font-size: 0.83em;
+      font-family: 'Geist Mono', 'Fira Code', monospace;
+    }
+    .msg-body pre {
+      background: #0d0d0f; border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+      margin: 0.5em 0; position: relative;
+    }
+    .msg-body pre code { font-size: 0.83rem; }
+    .cursor {
+      display: inline-block; width: 2px; height: 1em;
+      background: var(--accent); margin-left: 2px;
+      vertical-align: text-bottom; border-radius: 1px;
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .copy-btn {
+      position: absolute; top: 8px; right: 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text-muted); font-size: 0.68rem; padding: 3px 8px;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      opacity: 0; transition: opacity 0.12s; line-height: 1.6;
+    }
+    .msg-body pre:hover .copy-btn { opacity: 1; }
+    .copy-btn.copied { color: var(--accent); opacity: 1; }
+
+    /* Typing indicator */
+    .msg-typing .msg-body {
+      display: flex; align-items: center; gap: 5px; padding: 2px 0;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.15s; }
+    .dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-5px); }
+    }
+
+    .msg-separator { width: 100%; max-width: 700px; height: 1px; background: var(--border); margin: 8px 0; opacity: 0.4; }
+
+    /* Empty state */
+    #empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      padding: 40px 20px; width: 100%;
+    }
+    .empty-logo {
+      width: 52px; height: 52px; border-radius: 14px; background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em;
+    }
+    .empty-title {
+      font-size: 1.6rem; font-weight: 600; color: var(--text); letter-spacing: -0.02em;
+    }
+    .empty-subtitle { font-size: 0.875rem; color: var(--text-muted); text-align: center; max-width: 320px; }
+    .empty-chips {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 480px;
+    }
+    .chip {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 8px 16px; font-size: 0.82rem; color: var(--text-muted);
+      cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .chip:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+
+    #scroll-btn {
+      position: absolute; bottom: 90px; right: 24px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 0.9rem; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      transition: color 0.12s; z-index: 5; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    #scroll-btn.visible { display: flex; }
+    #scroll-btn:hover { color: var(--accent); }
+
+    /* ── INPUT AREA ── */
+    #input-wrap {
+      padding: 12px 20px 18px; display: flex; justify-content: center;
+    }
+    #input-box {
+      width: 100%; max-width: 700px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 12px 14px;
+      transition: border-color 0.15s;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #input-box:focus-within { border-color: var(--accent); }
+    #userInput {
+      background: none; border: none; outline: none; resize: none;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+      line-height: 1.55; max-height: 180px; overflow-y: auto; width: 100%;
+    }
+    #userInput::placeholder { color: var(--text-muted); }
+    #userInput::-webkit-scrollbar { width: 3px; }
+    #userInput::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .input-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+    .input-hint { font-size: 0.68rem; color: var(--text-faint); flex: 1; }
+    #sendBtn {
+      background: var(--accent); color: #0f0f12; border: none; border-radius: 9px;
+      padding: 7px 16px; font-family: 'Inter', sans-serif; font-weight: 600;
+      font-size: 0.82rem; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    #sendBtn:hover { background: var(--accent-hover); }
+    #sendBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+    #stopBtn {
+      background: none; color: #f87171; border: 1px solid #f8717144;
+      border-radius: 9px; padding: 7px 16px; font-family: 'Inter', sans-serif; font-weight: 600;
+      font-size: 0.82rem; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+      display: none;
+    }
+    #stopBtn:hover { background: #f8717110; border-color: #f87171; }
+
+    #model-selector-wrap {
+      display: flex; justify-content: center; padding: 0 20px 6px;
+    }
+    #model-btn {
+      background: none; border: 1px solid var(--border); border-radius: 20px;
+      color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.75rem;
+      padding: 5px 12px; cursor: pointer; transition: color 0.12s, border-color 0.12s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #model-btn:hover { color: var(--accent); border-color: var(--accent); }
+    #model-btn .chevron { font-size: 0.6rem; transition: transform 0.15s; }
+    #model-btn.open .chevron { transform: rotate(180deg); }
+
+    #model-dropdown {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: var(--sidebar); border: 1px solid var(--border); border-radius: 12px;
+      padding: 6px; min-width: 180px; box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; gap: 2px; z-index: 50;
+    }
+    #model-dropdown.open { display: flex; }
+    .model-option {
+      padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+      color: var(--text-muted); transition: background 0.12s, color 0.12s;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .model-option:hover { background: var(--surface); color: var(--text); }
+    .model-option.selected { background: var(--surface); color: var(--accent); }
+    .model-option-name { font-weight: 500; }
+    .model-option-desc { font-size: 0.68rem; color: var(--text-muted); }
+
+    #footnote {
+      text-align: center; padding: 0 0 12px;
+      font-size: 0.62rem; color: var(--text-faint);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <div class="brand-icon" style="background:none;padding:0;">
+          <img src="/static/genesis.png" alt="Genesis" style="width:28px;height:28px;border-radius:7px;object-fit:cover;display:block;"/>
+        </div>
+        <span class="brand-name">Genesis</span>
+      </div>
+      <button class="btn-new-chat" onclick="newChat()">
+        <span class="plus">+</span> New conversation
+      </button>
+    </div>
+    <div class="sidebar-section-label">Conversations</div>
+    <div id="chat-list"></div>
+    <div class="sidebar-footer">
+      <div class="user-row" onclick="openSettings()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">—</div>
+          <div class="user-email" id="user-email">—</div>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <a class="footer-btn" href="#" id="btn-home">Home</a>
+        <button class="footer-btn" onclick="openSettings()">Settings</button>
+        <button class="footer-btn danger" id="btn-signout">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal">
+    <div class="settings-box">
+      <div class="settings-header">
+        <h2>Account settings</h2>
+        <button class="btn-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="settings-avatar-row">
+        <div class="settings-avatar" id="settings-avatar">?</div>
+        <div>
+          <div class="s-name" id="settings-display-name">—</div>
+          <div class="s-email" id="settings-display-email">—</div>
+        </div>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="settings-label">Display Name</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="settings-input" type="text" id="settings-new-name" placeholder="Your name"/>
+        <button class="btn-save" id="btn-save-name">Save</button>
+      </div>
+      <div class="settings-msg" id="settings-name-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-label">Change Password</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-old-password" placeholder="Current password"/>
+        <button class="btn-pw-toggle" data-target="settings-old-password">show</button>
+      </div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-password" placeholder="New password"/>
+        <button class="btn-pw-toggle" data-target="settings-password">show</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <button class="btn-save" id="btn-save-password">Save</button>
+        <a class="settings-forgot" href="#" id="btn-forgot-password">Forgot password?</a>
+      </div>
+      <div class="settings-msg" id="settings-pw-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-label">Change Email</div>
+      <input class="settings-input" type="email" id="settings-new-email" placeholder="New email address"/>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-email-password" placeholder="Current password to confirm"/>
+        <button class="btn-pw-toggle" data-target="settings-email-password">show</button>
+      </div>
+      <button class="btn-save" id="btn-save-email">Save</button>
+      <div class="settings-msg" id="settings-email-msg"></div>
+      <div class="settings-divider"></div>
+      <div class="settings-label">Delete Account</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);">This permanently deletes your account.</div>
+      <div class="settings-pw-field">
+        <input class="settings-input" type="password" id="settings-delete-password" placeholder="Enter your password to confirm"/>
+        <button class="btn-pw-toggle" data-target="settings-delete-password">show</button>
+      </div>
+      <button class="btn-danger-sm" id="btn-delete-account" style="width:100%;padding:10px;">Delete my account</button>
+      <div class="settings-msg" id="settings-delete-msg"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <button id="scroll-btn" title="Jump to bottom">↓</button>
+    <div id="chatbox">
+      <div id="empty-state">
+        <div class="empty-logo" style="background:none;padding:0;"><img src="/static/genesis.png" alt="Genesis" style="width:52px;height:52px;border-radius:14px;object-fit:cover;display:block;"/></div>
+        <div class="empty-title">What can I help with?</div>
+        <div class="empty-subtitle">Ask anything — Genesis is a general-purpose AI assistant ready to help.</div>
+        <div class="empty-chips">
+          <div class="chip" onclick="useChip(this)">Explain a concept simply</div>
+          <div class="chip" onclick="useChip(this)">Write something creative</div>
+          <div class="chip" onclick="useChip(this)">Help me debug code</div>
+          <div class="chip" onclick="useChip(this)">Summarise a topic</div>
+          <div class="chip" onclick="useChip(this)">Draft an email</div>
+        </div>
+      </div>
+    </div>
+    <div id="model-selector-wrap">
+      <div style="position:relative;">
+        <button id="model-btn" onclick="toggleModelDropdown()">
+          <span id="model-btn-label">Genesis 1.0</span>
+          <span class="chevron">▲</span>
+        </button>
+        <div id="model-dropdown">
+          <div class="model-option selected" data-model="genesis-1.0" onclick="selectModel(this)">
+            <span class="model-option-name">Genesis 1.0</span>
+            <span class="model-option-desc">Fast &amp; capable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="input-wrap">
+      <div id="input-box">
+        <textarea id="userInput" rows="1" placeholder="Message Genesis…"></textarea>
+        <div class="input-actions">
+          <span class="input-hint">Enter to send · Shift+Enter for newline</span>
+          <button id="stopBtn">Stop</button>
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+    <div id="footnote">&copy; Hielluo 2026 &nbsp;·&nbsp; AI can make mistakes</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signOut as fbSignOut,
+      EmailAuthProvider, reauthenticateWithCredential,
+      updateProfile, updatePassword, updateEmail,
+      sendPasswordResetEmail, sendEmailVerification, deleteUser, signInWithCustomToken
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5UX0bdvHs8kolEWrpJ9SG6md9-GcGvq4",
+      authDomain: "hielluo.firebaseapp.com",
+      projectId: "hielluo",
+      storageBucket: "hielluo.firebasestorage.app",
+      messagingSenderId: "925488019863",
+      appId: "1:925488019863:web:6171eac97352abed9bacd2"
+    };
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+
+    const _sso = new URLSearchParams(window.location.search).get('sso');
+    if (_sso) { history.replaceState(null, '', window.location.pathname); signInWithCustomToken(auth, _sso).catch(() => {}); }
+
+    auth.authStateReady().then(() => {
+      onAuthStateChanged(auth, user => {
+        if (!user) { window.location.href = '/'; return; }
+        populateUser(user);
+      });
+    });
+
+    function populateUser(user) {
+      const name = user.displayName || (user.email ? user.email.split('@')[0] : '');
+      const email = user.email || '';
+      const initial = name ? name.charAt(0).toUpperCase() : 'U';
+      const photo = user.photoURL || user.providerData[0]?.photoURL || '';
+      const av = document.getElementById('user-avatar');
+      if (photo) { av.innerHTML = `<img src="${photo}" alt="${name}">`; } else { av.textContent = initial; }
+      document.getElementById('user-name').textContent = name;
+      document.getElementById('user-email').textContent = email;
+      const sa = document.getElementById('settings-avatar');
+      if (photo) { sa.innerHTML = `<img src="${photo}" alt="${name}">`; } else { sa.textContent = initial; }
+      document.getElementById('settings-display-name').textContent = name;
+      document.getElementById('settings-display-email').textContent = email;
+      document.getElementById('settings-new-name').value = name;
+    }
+
+    // ── Settings ──
+    window.openSettings = () => document.getElementById('settings-modal').classList.add('visible');
+    window.closeSettings = () => document.getElementById('settings-modal').classList.remove('visible');
+    document.getElementById('settings-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSettings(); });
+
+    function setMsg(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.style.color = ok ? 'var(--accent)' : '#f87171';
+      el.textContent = text;
+    }
+
+    document.getElementById('btn-save-name').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const name = document.getElementById('settings-new-name').value.trim();
+      if (!name) { setMsg('settings-name-msg', 'Please enter a name.', false); return; }
+      try { await updateProfile(user, { displayName: name }); populateUser(auth.currentUser); setMsg('settings-name-msg', 'Saved.'); }
+      catch { setMsg('settings-name-msg', 'Failed to update name.', false); }
+    });
+
+    document.getElementById('btn-save-password').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const oldPw = document.getElementById('settings-old-password').value;
+      const newPw = document.getElementById('settings-password').value;
+      if (!oldPw || !newPw) { setMsg('settings-pw-msg', 'Please fill in all fields.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, oldPw));
+        await updatePassword(user, newPw);
+        document.getElementById('settings-old-password').value = '';
+        document.getElementById('settings-password').value = '';
+        setMsg('settings-pw-msg', 'Password updated.');
+      } catch (e) { setMsg('settings-pw-msg', e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential' ? 'Current password is incorrect.' : 'Something went wrong.', false); }
+    });
+
+    document.getElementById('btn-forgot-password').addEventListener('click', async e => {
+      e.preventDefault();
+      const user = auth.currentUser; if (!user) return;
+      try { await sendPasswordResetEmail(auth, user.email); setMsg('settings-pw-msg', 'Reset email sent.'); }
+      catch { setMsg('settings-pw-msg', 'Failed to send reset email.', false); }
+    });
+
+    document.getElementById('btn-save-email').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const newEmail = document.getElementById('settings-new-email').value.trim();
+      const pw = document.getElementById('settings-email-password').value;
+      if (!newEmail || !pw) { setMsg('settings-email-msg', 'Please fill in all fields.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+        await updateEmail(user, newEmail);
+        await sendEmailVerification(user);
+        document.getElementById('settings-new-email').value = '';
+        document.getElementById('settings-email-password').value = '';
+        setMsg('settings-email-msg', 'Email updated. Verify your new address.');
+        populateUser(auth.currentUser);
+      } catch (e) { setMsg('settings-email-msg', e.code === 'auth/invalid-credential' ? 'Incorrect password.' : 'Something went wrong.', false); }
+    });
+
+    document.getElementById('btn-delete-account').addEventListener('click', async () => {
+      const user = auth.currentUser; if (!user) return;
+      const pw = document.getElementById('settings-delete-password').value;
+      if (!pw) { setMsg('settings-delete-msg', 'Please enter your password.', false); return; }
+      try {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+        await deleteUser(user);
+      } catch (e) { setMsg('settings-delete-msg', e.code === 'auth/invalid-credential' ? 'Incorrect password.' : 'Something went wrong.', false); }
+    });
+
+    document.querySelectorAll('.btn-pw-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? 'show' : 'hide';
+      });
+    });
+
+    // ── Home SSO ──
+    document.getElementById('btn-home').addEventListener('click', async e => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) { window.location.href = '/'; return; }
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/auth/custom-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) });
+        const { customToken } = await res.json();
+        window.location.href = `/?sso=${encodeURIComponent(customToken)}`;
+      } catch { window.location.href = '/'; }
+    });
+
+    document.getElementById('btn-signout').addEventListener('click', async () => { await fbSignOut(auth); window.location.href = '/'; });
+
+    // ── Chat logic ──
+    let currentChatId = null;
+    let currentMessages = [];
+    let isResponding = false;
+    let _abort = null;
+    let selectedModel = localStorage.getItem('genesis_model') || 'genesis-1.0';
+
+    // ── Model selector ──
+    const MODEL_MAP = {
+      'genesis-1.0': 'gemini-2.5-flash',
+    };
+
+    function applySelectedModel() {
+      document.querySelectorAll('.model-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.model === selectedModel);
+      });
+      const opt = document.querySelector(`.model-option[data-model="${selectedModel}"]`);
+      document.getElementById('model-btn-label').textContent = opt ? opt.querySelector('.model-option-name').textContent : selectedModel;
+    }
+
+    window.toggleModelDropdown = function() {
+      const btn = document.getElementById('model-btn');
+      const dd = document.getElementById('model-dropdown');
+      btn.classList.toggle('open');
+      dd.classList.toggle('open');
+    };
+
+    window.selectModel = function(el) {
+      selectedModel = el.dataset.model;
+      localStorage.setItem('genesis_model', selectedModel);
+      applySelectedModel();
+      document.getElementById('model-btn').classList.remove('open');
+      document.getElementById('model-dropdown').classList.remove('open');
+    };
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#model-selector-wrap')) {
+        document.getElementById('model-btn').classList.remove('open');
+        document.getElementById('model-dropdown').classList.remove('open');
+      }
+    });
+
+    applySelectedModel();
+
+    function chatsKey() { return 'genesis_chats'; }
+    function loadAll() { try { return JSON.parse(localStorage.getItem(chatsKey()) || '[]'); } catch { return []; } }
+    function saveAll(c) { localStorage.setItem(chatsKey(), JSON.stringify(c)); }
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+    function newChat() {
+      const chats = loadAll();
+      const chat = { id: genId(), title: 'New conversation', messages: [], createdAt: Date.now() };
+      chats.unshift(chat);
+      saveAll(chats);
+      openChat(chat.id);
+      loadChatList();
+    }
+
+    function openChat(id) {
+      currentChatId = id;
+      const chat = loadAll().find(c => c.id === id);
+      currentMessages = chat ? chat.messages.slice() : [];
+      renderMessages();
+      document.querySelectorAll('.chat-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+    }
+
+    function deleteChat(e, id) {
+      e.stopPropagation();
+      saveAll(loadAll().filter(c => c.id !== id));
+      if (currentChatId === id) { currentChatId = null; currentMessages = []; renderMessages(); }
+      loadChatList();
+    }
+
+    function saveCurrent() {
+      if (!currentChatId) return;
+      const chats = loadAll();
+      const idx = chats.findIndex(c => c.id === currentChatId);
+      if (idx !== -1) {
+        chats[idx].messages = currentMessages.slice();
+        chats[idx].updatedAt = Date.now();
+        if (currentMessages.length > 0) {
+          chats[idx].title = currentMessages[0].content.slice(0, 42) + (currentMessages[0].content.length > 42 ? '…' : '');
+        }
+        const [chat] = chats.splice(idx, 1);
+        chats.unshift(chat);
+        saveAll(chats);
+        loadChatList();
+      }
+    }
+
+    function loadChatList() {
+      const list = document.getElementById('chat-list');
+      const chats = loadAll();
+      if (!chats.length) {
+        list.innerHTML = `<div style="padding:10px;font-size:0.78rem;color:var(--text-muted);text-align:center;">No conversations yet</div>`;
+        return;
+      }
+      list.innerHTML = chats.map(c => `
+        <div class="chat-item${c.id === currentChatId ? ' active' : ''}" data-id="${c.id}" onclick="openChat('${c.id}')">
+          <span class="chat-item-title">${escHtml(c.title)}</span>
+          <button class="chat-delete" onclick="deleteChat(event,'${c.id}')">✕</button>
+        </div>`).join('');
+    }
+
+    function renderMessages() {
+      const box = document.getElementById('chatbox');
+      if (!currentMessages.length) {
+        box.innerHTML = `<div id="empty-state">
+          <div class="empty-logo" style="background:none;padding:0;"><img src="/static/genesis.png" alt="Genesis" style="width:52px;height:52px;border-radius:14px;object-fit:cover;display:block;"/></div>
+          <div class="empty-title">What can I help with?</div>
+          <div class="empty-subtitle">Ask anything — Genesis is a general-purpose AI assistant ready to help.</div>
+          <div class="empty-chips">
+            <div class="chip" onclick="useChip(this)">Explain a concept simply</div>
+            <div class="chip" onclick="useChip(this)">Write something creative</div>
+            <div class="chip" onclick="useChip(this)">Help me debug code</div>
+            <div class="chip" onclick="useChip(this)">Summarise a topic</div>
+            <div class="chip" onclick="useChip(this)">Draft an email</div>
+          </div>
+        </div>`;
+        return;
+      }
+      box.innerHTML = currentMessages.map((m, i) => buildMsgHtml(m.role, m.content, i)).join('');
+      box.scrollTop = box.scrollHeight;
+      box.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+      attachCopyBtns();
+    }
+
+    function buildMsgHtml(role, text, idx) {
+      if (role === 'user') {
+        return `<div class="msg-wrapper"><div class="msg-user"><div class="msg-user-bubble">${escHtml(text)}</div></div></div>`;
+      }
+      return `<div class="msg-wrapper"><div class="msg-assistant"><div class="msg-label">Genesis</div><div class="msg-body">${renderMd(text)}</div></div></div>`;
+    }
+
+    function renderMd(text) {
+      marked.setOptions({ breaks: true, gfm: true });
+      let html = marked.parse(text);
+      // Wrap pre elements for copy button
+      html = html.replace(/<pre>/g, '<pre style="position:relative"><button class="copy-btn">copy</button>');
+      return html;
+    }
+
+    function attachCopyBtns() {
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const code = btn.closest('pre').querySelector('code')?.textContent || '';
+          navigator.clipboard.writeText(code).then(() => {
+            btn.textContent = 'copied'; btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1500);
+          });
+        });
+      });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.useChip = function(el) {
+      if (!currentChatId) newChat();
+      document.getElementById('userInput').value = el.textContent;
+      sendMessage();
+    };
+
+    // ── Auto-resize textarea ──
+    const textarea = document.getElementById('userInput');
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 180) + 'px';
+    });
+
+    async function sendMessage() {
+      if (isResponding) return;
+      const text = textarea.value.trim();
+      if (!text) return;
+      if (!currentChatId) newChat();
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      isResponding = true;
+      _abort = new AbortController();
+      document.getElementById('sendBtn').style.display = 'none';
+      document.getElementById('stopBtn').style.display = 'block';
+
+      currentMessages.push({ role: 'user', content: text });
+      renderMessages();
+
+      // Typing indicator
+      const box = document.getElementById('chatbox');
+      const typing = document.createElement('div');
+      typing.className = 'msg-wrapper';
+      typing.innerHTML = `<div class="msg-assistant msg-typing"><div class="msg-label">Genesis</div><div class="msg-body"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+      box.appendChild(typing);
+      box.scrollTop = box.scrollHeight;
+
+      let reply = '';
+      try {
+        const res = await fetch('/genesis/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, history: currentMessages.slice(0, -1), model: selectedModel }),
+          signal: _abort.signal
+        });
+        typing.remove();
+
+        const msgEl = document.createElement('div');
+        msgEl.className = 'msg-wrapper';
+        msgEl.innerHTML = `<div class="msg-assistant"><div class="msg-label">Genesis</div><div class="msg-body"></div></div>`;
+        box.appendChild(msgEl);
+        const body = msgEl.querySelector('.msg-body');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        // Show plain text + cursor during streaming
+        body.style.whiteSpace = 'pre-wrap';
+        body.innerHTML = '<span class="cursor"></span>';
+        const cursorEl = body.querySelector('.cursor');
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          for (const line of decoder.decode(value).split('\n')) {
+            if (!line.startsWith('data:')) continue;
+            const data = JSON.parse(line.slice(5).trim());
+            if (data.chunk) {
+              reply += data.chunk;
+              body.firstChild.textContent = reply;
+              body.scrollTop = body.scrollHeight;
+              box.scrollTop = box.scrollHeight;
+            }
+            if (data.error) {
+              body.style.whiteSpace = '';
+              body.innerHTML = `<span style="color:#f87171">${escHtml(data.error)}</span>`;
+              box.scrollTop = box.scrollHeight;
+              break;
+            }
+            if (data.done) break;
+          }
+        }
+        // Render markdown now that streaming is complete
+        body.style.whiteSpace = '';
+        body.innerHTML = renderMd(reply);
+        body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+        attachCopyBtns();
+        box.scrollTop = box.scrollHeight;
+      } catch (e) {
+        typing.remove();
+        if (e.name !== 'AbortError') {
+          const err = document.createElement('div');
+          err.className = 'msg-wrapper';
+          err.innerHTML = `<div class="msg-assistant"><div class="msg-label" style="color:#f87171">Error</div><div class="msg-body" style="color:#f87171">Something went wrong. Please try again.</div></div>`;
+          document.getElementById('chatbox').appendChild(err);
+        }
+      }
+
+      if (reply) { currentMessages.push({ role: 'assistant', content: reply }); saveCurrent(); renderMessages(); }
+
+      isResponding = false; _abort = null;
+      document.getElementById('sendBtn').style.display = 'block';
+      document.getElementById('stopBtn').style.display = 'none';
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('stopBtn').addEventListener('click', () => { if (_abort) _abort.abort(); });
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    const chatbox = document.getElementById('chatbox');
+    const scrollBtn = document.getElementById('scroll-btn');
+    chatbox.addEventListener('scroll', () => {
+      scrollBtn.classList.toggle('visible', chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight > 80);
+    });
+    scrollBtn.addEventListener('click', () => chatbox.scrollTop = chatbox.scrollHeight);
+
+    window.newChat = newChat;
+    window.openChat = openChat;
+    window.deleteChat = deleteChat;
+
+    loadChatList();
+  </script>
+</body>
+</html>
