@@ -306,10 +306,10 @@ export default {
 
     // Clean URL → index.html routing
     if (pathname === '/argentaurius' || pathname === '/argentaurius/') {
-      return env.ASSETS.fetch(new Request(`${origin}/argentaurius/index.html`, request));
+      return env.ASSETS.fetch(new Request(`${origin}/argentaurius/index.html`));
     }
     if (pathname === '/genesis' || pathname === '/genesis/') {
-      return env.ASSETS.fetch(new Request(`${origin}/genesis/index.html`, request));
+      return env.ASSETS.fetch(new Request(`${origin}/genesis/index.html`));
     }
 
     return env.ASSETS.fetch(request);
