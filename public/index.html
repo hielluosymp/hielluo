@@ -473,12 +473,12 @@
               <div class="app-card-title">ThatGPT</div>
               <div class="app-card-desc">AI chat powered by the latest models.</div>
             </a>
-            <a class="app-card" href="/argentaurius" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/argentaurius')" rel="noopener">
               <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
-            <a class="app-card" href="/genesis" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/genesis')" rel="noopener">
               <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
@@ -509,12 +509,12 @@
               <div class="app-card-title">ThatGPT</div>
               <div class="app-card-desc">AI chat powered by the latest models.</div>
             </a>
-            <a class="app-card" href="/argentaurius" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/argentaurius')" rel="noopener">
               <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
-            <a class="app-card" href="/genesis" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/genesis')" rel="noopener">
               <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
@@ -532,12 +532,12 @@
         <div id="section-tools" style="display:none">
           <div class="main-heading">Tools</div>
           <div class="apps-grid">
-            <a class="app-card" href="/argentaurius" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/argentaurius')" rel="noopener">
               <div class="app-card-icon"><img src="/static/argentaurius.png" alt="Argentaurius"/></div>
               <div class="app-card-title">Argentaurius</div>
               <div class="app-card-desc">AI chatbot powered banker</div>
             </a>
-            <a class="app-card" href="/genesis" rel="noopener">
+            <a class="app-card" href="#" onclick="openApp(event,'/genesis')" rel="noopener">
               <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
@@ -991,8 +991,8 @@
     // ── Search ──
     const ALL_APPS = [
       { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' },
-      { name: 'Argentaurius', desc: 'AI chatbot powered banker', href: '/argentaurius', icon: '<img src="/static/argentaurius.png" alt="Argentaurius"/>' },
-      { name: 'Genesis', desc: "Hielluo's most powerful model yet", href: '/genesis', icon: '<img src="/static/genesis.png" alt="Genesis"/>' }
+      { name: 'Argentaurius', desc: 'AI chatbot powered banker', action: "openApp(event,'/argentaurius')", icon: '<img src="/static/argentaurius.png" alt="Argentaurius"/>' },
+      { name: 'Genesis', desc: "Hielluo's most powerful model yet", action: "openApp(event,'/genesis')", icon: '<img src="/static/genesis.png" alt="Genesis"/>' }
     ];
     window.searchApps = function(query) {
       const q = query.trim().toLowerCase();
@@ -1018,7 +1018,7 @@
         return;
       }
       resultsSection.innerHTML = `<div class="main-heading">Results</div><div class="apps-grid">${results.map(a => `
-        <a class="app-card" href="${a.href || '#'}" ${a.action ? `onclick="${a.action}(event)"` : ''} rel="noopener">
+        <a class="app-card" href="#" ${a.action ? `onclick="${a.action}"` : ''} rel="noopener">
           <div class="app-card-icon">${a.icon || `
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
               <line x1="14" y1="2" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
@@ -1071,6 +1071,25 @@
         </a>`).join('');
     }
     renderRecent();
+
+    // ── SSO redirect to internal apps ──
+    window.openApp = async function(e, path) {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) { window.location.href = path; return; }
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/auth/custom-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        const { customToken } = await res.json();
+        window.location.href = `${path}?sso=${encodeURIComponent(customToken)}`;
+      } catch {
+        window.location.href = path;
+      }
+    };
 
     // ── SSO redirect to ThatGPT ──
     window.openThatGPT = async function(e) {
