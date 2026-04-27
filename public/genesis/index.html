@@ -568,6 +568,9 @@
       onAuthStateChanged(auth, user => {
         if (!user) { window.location.href = '/'; return; }
         populateUser(user);
+        loadChatList();
+        const chats = loadAll();
+        if (chats.length) openChat(chats[0].id); else newChat();
       });
     });
 
