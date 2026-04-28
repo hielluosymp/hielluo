@@ -891,24 +891,23 @@
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        // Show plain text + cursor during streaming
-        body.style.whiteSpace = 'pre-wrap';
-        body.innerHTML = '<span class="cursor"></span>';
-        const cursorEl = body.querySelector('.cursor');
+        let buf = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          for (const line of decoder.decode(value).split('\n')) {
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
             if (!line.startsWith('data:')) continue;
-            const data = JSON.parse(line.slice(5).trim());
+            let data; try { data = JSON.parse(line.slice(5).trim()); } catch { continue; }
             if (data.chunk) {
               reply += data.chunk;
-              body.firstChild.textContent = reply;
-              body.scrollTop = body.scrollHeight;
+              body.innerHTML = renderMd(reply) + '<span class="cursor"></span>';
+              body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
               box.scrollTop = box.scrollHeight;
             }
             if (data.error) {
-              body.style.whiteSpace = '';
               body.innerHTML = `<span style="color:#f87171">${escHtml(data.error)}</span>`;
               box.scrollTop = box.scrollHeight;
               break;
@@ -916,8 +915,6 @@
             if (data.done) break;
           }
         }
-        // Render markdown now that streaming is complete
-        body.style.whiteSpace = '';
         body.innerHTML = renderMd(reply);
         body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
         attachCopyBtns();

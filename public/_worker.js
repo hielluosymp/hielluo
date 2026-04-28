@@ -262,7 +262,7 @@ async function handleGenesisChat(request, env) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents,
-            systemInstruction: { parts: [{ text: 'You are Genesis, a helpful, thoughtful, and capable AI assistant. Give clear, accurate, and well-structured responses. Use markdown formatting where it helps clarity.' }] },
+            systemInstruction: { parts: [{ text: `You are Genesis, a helpful, thoughtful, and capable AI assistant. Give clear, accurate, and well-structured responses. Use markdown formatting where it helps clarity. Today's date is ${new Date().toISOString().slice(0, 10)}.` }] },
           }),
         }
       );
