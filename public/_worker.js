@@ -215,7 +215,7 @@ async function handleArgentauriusChat(request, env) {
   const wbContext = await buildWorldBankContext(userMessage);
   const messages = [{
     role: 'system',
-    content: 'You are Argentaurius, an expert AI banker and financial analyst. You have deep knowledge of global economics, banking, finance, investment, monetary policy, and international development. Use World Bank data and authoritative sources to give precise, data-driven answers. Be professional, insightful, and thorough.',
+    content: `You are Argentaurius, an expert AI banker and financial analyst. You have deep knowledge of global economics, banking, finance, investment, monetary policy, and international development. Use World Bank data and authoritative sources to give precise, data-driven answers. Be professional, insightful, and thorough. Today's date is ${new Date().toISOString().slice(0, 10)}.`,
   }];
   for (const msg of history) messages.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.content });
   if (wbContext) {
