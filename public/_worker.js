@@ -250,25 +250,32 @@ async function handleGenesisChat(request, env) {
     { role: 'user', parts: [{ text: userMessage }] },
   ];
   const keys = (env.GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
-  const apiKey = keys[Math.floor(Math.random() * keys.length)];
+  const startIdx = Math.floor(Math.random() * keys.length);
   const stream = makeSSEStream(async (send) => {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: 'You are Genesis, a helpful, thoughtful, and capable AI assistant. Give clear, accurate, and well-structured responses. Use markdown formatting where it helps clarity.' }] },
-        }),
-      }
-    );
-    if (!res.ok) { await send({ error: await res.text() }); return; }
-    await streamFromSSE(res, async (event) => {
-      const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) await send({ chunk: text });
-    });
-    await send({ done: true });
+    let lastError = '';
+    for (let i = 0; i < keys.length; i++) {
+      const apiKey = keys[(startIdx + i) % keys.length];
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            systemInstruction: { parts: [{ text: 'You are Genesis, a helpful, thoughtful, and capable AI assistant. Give clear, accurate, and well-structured responses. Use markdown formatting where it helps clarity.' }] },
+          }),
+        }
+      );
+      if (res.status === 429) { lastError = await res.text(); continue; }
+      if (!res.ok) { await send({ error: await res.text() }); return; }
+      await streamFromSSE(res, async (event) => {
+        const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) await send({ chunk: text });
+      });
+      await send({ done: true });
+      return;
+    }
+    await send({ error: `All API keys rate limited: ${lastError}` });
   });
   return sseResponse(stream);
 }
