@@ -249,9 +249,11 @@ async function handleGenesisChat(request, env) {
     ...history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
     { role: 'user', parts: [{ text: userMessage }] },
   ];
+  const keys = (env.GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+  const apiKey = keys[Math.floor(Math.random() * keys.length)];
   const stream = makeSSEStream(async (send) => {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${env.GEMINI_API_KEY}&alt=sse`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
