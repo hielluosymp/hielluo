@@ -298,13 +298,104 @@ async function handleCustomToken(request, env) {
   }
 }
 
+// ── Encodever ────────────────────────────────────────────────────────────────
+
+function genCode() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const arr = new Uint8Array(6);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => chars[b % chars.length]).join('');
+}
+
+function getContentType(path) {
+  const ext = (path.split('.').pop() || '').toLowerCase();
+  return {
+    html:'text/html;charset=utf-8', htm:'text/html;charset=utf-8',
+    css:'text/css', js:'application/javascript', mjs:'application/javascript',
+    json:'application/json', txt:'text/plain', md:'text/plain',
+    xml:'application/xml', svg:'image/svg+xml',
+    png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+    gif:'image/gif', webp:'image/webp', ico:'image/x-icon',
+    woff:'font/woff', woff2:'font/woff2', ttf:'font/ttf', otf:'font/otf',
+    pdf:'application/pdf',
+  }[ext] || 'application/octet-stream';
+}
+
+async function handleEncodeServe(request, env) {
+  const { pathname } = new URL(request.url);
+  if (pathname === '/' || pathname === '') {
+    return new Response(`<!DOCTYPE html><html><head><title>Encodever</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0d0d0f;color:#f0f0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}h1{font-size:2rem;color:#1188aa}p{color:#888;margin-top:8px}a{color:#1188aa;text-decoration:none}</style></head><body><div><h1>Encodever</h1><p>Static site hosting by <a href="https://hielluo.org">Hielluo</a></p></div></body></html>`,
+      { headers: { 'Content-Type': 'text/html' } });
+  }
+  const parts = pathname.slice(1).split('/');
+  const siteId = parts[0];
+  const filePath = parts.slice(1).join('/') || 'index.html';
+  let entry = await env.ENCODEVER_KV.get(`f:${siteId}:${filePath}`, 'json');
+  if (!entry && !filePath.includes('.')) {
+    entry = await env.ENCODEVER_KV.get(`f:${siteId}:${filePath}/index.html`, 'json')
+         || await env.ENCODEVER_KV.get(`f:${siteId}:index.html`, 'json');
+  }
+  if (!entry) return new Response('Not found', { status: 404 });
+  const body = entry.e === 'base64'
+    ? Uint8Array.from(atob(entry.c), c => c.charCodeAt(0))
+    : entry.c;
+  return new Response(body, { headers: { 'Content-Type': entry.t || getContentType(filePath) } });
+}
+
+async function handleEncodeUpload(request, env) {
+  const data = await request.json().catch(() => null);
+  if (!data) return jsonResponse({ error: 'Invalid request' }, 400);
+  const { idToken, name, files } = data;
+  if (!idToken) return jsonResponse({ error: 'Auth required' }, 401);
+  if (!name?.trim()) return jsonResponse({ error: 'Site name required' }, 400);
+  if (!files?.length) return jsonResponse({ error: 'No files provided' }, 400);
+  if (files.length > 100) return jsonResponse({ error: 'Too many files (max 100)' }, 400);
+  let uid;
+  try { uid = await verifyIdToken(idToken); } catch (e) { return jsonResponse({ error: e.message }, 401); }
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'site';
+  const siteId = `${slug}-${genCode()}`;
+  await Promise.all(files.map(f =>
+    env.ENCODEVER_KV.put(`f:${siteId}:${f.path}`, JSON.stringify({ c: f.content, t: f.type || getContentType(f.path), e: f.encoding || 'utf8' }))
+  ));
+  await env.ENCODEVER_KV.put(`m:${siteId}`, JSON.stringify({ uid, name: slug, siteId, createdAt: Date.now(), files: files.map(f => f.path) }));
+  const existing = await env.ENCODEVER_KV.get(`u:${uid}`, 'json') || [];
+  await env.ENCODEVER_KV.put(`u:${uid}`, JSON.stringify([siteId, ...existing].slice(0, 50)));
+  return jsonResponse({ url: `https://encode.hielluo.org/${siteId}`, siteId });
+}
+
+async function handleEncodeSites(request, env) {
+  const idToken = new URL(request.url).searchParams.get('idToken');
+  if (!idToken) return jsonResponse({ error: 'Auth required' }, 401);
+  let uid;
+  try { uid = await verifyIdToken(idToken); } catch (e) { return jsonResponse({ error: e.message }, 401); }
+  const siteIds = await env.ENCODEVER_KV.get(`u:${uid}`, 'json') || [];
+  const sites = (await Promise.all(siteIds.map(id => env.ENCODEVER_KV.get(`m:${id}`, 'json')))).filter(Boolean);
+  return jsonResponse({ sites: sites.map(s => ({ ...s, url: `https://encode.hielluo.org/${s.siteId}` })) });
+}
+
+async function handleEncodeDelete(request, env) {
+  const { idToken, siteId } = await request.json().catch(() => ({}));
+  if (!idToken) return jsonResponse({ error: 'Auth required' }, 401);
+  let uid;
+  try { uid = await verifyIdToken(idToken); } catch (e) { return jsonResponse({ error: e.message }, 401); }
+  const meta = await env.ENCODEVER_KV.get(`m:${siteId}`, 'json');
+  if (!meta || meta.uid !== uid) return jsonResponse({ error: 'Not found or not authorized' }, 403);
+  await env.ENCODEVER_KV.delete(`m:${siteId}`);
+  if (meta.files) await Promise.all(meta.files.map(p => env.ENCODEVER_KV.delete(`f:${siteId}:${p}`)));
+  const existing = await env.ENCODEVER_KV.get(`u:${uid}`, 'json') || [];
+  await env.ENCODEVER_KV.put(`u:${uid}`, JSON.stringify(existing.filter(id => id !== siteId)));
+  return jsonResponse({ success: true });
+}
+
 // ── Main router ───────────────────────────────────────────────────────────────
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const { pathname, origin } = url;
+    const { pathname, origin, hostname } = url;
     const method = request.method;
+
+    if (hostname === 'encode.hielluo.org') return handleEncodeServe(request, env);
 
     if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
 
@@ -312,6 +403,9 @@ export default {
     if (method === 'POST' && pathname === '/genesis/chat') return handleGenesisChat(request, env);
     if (pathname === '/genesis/models') return handleGenesisModels();
     if (method === 'POST' && pathname === '/auth/custom-token') return handleCustomToken(request, env);
+    if (method === 'POST' && pathname === '/encodever/upload') return handleEncodeUpload(request, env);
+    if (method === 'GET' && pathname === '/encodever/sites') return handleEncodeSites(request, env);
+    if (method === 'POST' && pathname === '/encodever/delete') return handleEncodeDelete(request, env);
 
     // Clean URL → index.html routing
     if (pathname === '/argentaurius' || pathname === '/argentaurius/') {
@@ -319,6 +413,9 @@ export default {
     }
     if (pathname === '/genesis' || pathname === '/genesis/') {
       return env.ASSETS.fetch(new Request(`${origin}/genesis/index.html`));
+    }
+    if (pathname === '/tools/encodever' || pathname === '/tools/encodever/') {
+      return env.ASSETS.fetch(new Request(`${origin}/tools/encodever/index.html`));
     }
 
     return env.ASSETS.fetch(request);

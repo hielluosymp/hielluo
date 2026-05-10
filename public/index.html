@@ -483,6 +483,13 @@
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
             </a>
+            <a class="app-card" href="#" onclick="openApp(event,'/tools/encodever')" rel="noopener">
+              <div class="app-card-icon" style="background:var(--accent);display:flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div class="app-card-title">Encodever</div>
+              <div class="app-card-desc">Deploy static sites instantly</div>
+            </a>
           </div>
         </div>
 
@@ -541,6 +548,13 @@
               <div class="app-card-icon"><img src="/static/genesis.png" alt="Genesis"/></div>
               <div class="app-card-title">Genesis</div>
               <div class="app-card-desc">Hielluo's most powerful model yet</div>
+            </a>
+            <a class="app-card" href="#" onclick="openApp(event,'/tools/encodever')" rel="noopener">
+              <div class="app-card-icon" style="background:var(--accent);display:flex;align-items:center;justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div class="app-card-title">Encodever</div>
+              <div class="app-card-desc">Deploy static sites instantly</div>
             </a>
           </div>
         </div>
@@ -992,7 +1006,8 @@
     const ALL_APPS = [
       { name: 'ThatGPT', desc: 'AI chat powered by the latest models.', action: 'openThatGPT' },
       { name: 'Argentaurius', desc: 'AI chatbot powered banker', action: "openApp(event,'/argentaurius')", icon: '<img src="/static/argentaurius.png" alt="Argentaurius"/>' },
-      { name: 'Genesis', desc: "Hielluo's most powerful model yet", action: "openApp(event,'/genesis')", icon: '<img src="/static/genesis.png" alt="Genesis"/>' }
+      { name: 'Genesis', desc: "Hielluo's most powerful model yet", action: "openApp(event,'/genesis')", icon: '<img src="/static/genesis.png" alt="Genesis"/>' },
+      { name: 'Encodever', desc: 'Deploy static sites instantly', action: "openApp(event,'/tools/encodever')", icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" style="background:var(--accent);padding:2px;border-radius:4px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' }
     ];
     window.searchApps = function(query) {
       const q = query.trim().toLowerCase();
