@@ -86,6 +86,18 @@
     }
     .card-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; margin-bottom: 6px; }
     .card-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 24px; }
+    .edit-banner {
+      background: rgba(17,136,170,0.12); border: 1px solid var(--accent);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
+      display: none; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .edit-banner-text { font-size: 0.75rem; color: var(--accent); }
+    .btn-cancel-edit {
+      padding: 4px 10px; border-radius: 6px; border: 1px solid var(--accent);
+      background: none; color: var(--accent); font-family: 'DM Mono', monospace;
+      font-size: 0.7rem; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-cancel-edit:hover { background: rgba(17,136,170,0.2); }
 
     .field-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; display: block; }
     .field-hint { font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
@@ -205,8 +217,12 @@
 
 <main id="main">
   <div class="upload-card">
-    <div class="card-title">Deploy a new site</div>
-    <div class="card-sub">Your site will be live at <span style="color:var(--accent)">encode.hielluo.org/{name}-{code}</span></div>
+    <div class="edit-banner" id="edit-banner">
+      <span class="edit-banner-text" id="edit-banner-text">Editing site</span>
+      <button class="btn-cancel-edit" id="btn-cancel-edit">Cancel</button>
+    </div>
+    <div class="card-title" id="card-title">Deploy a new site</div>
+    <div class="card-sub" id="card-sub">Your site will be live at <span style="color:var(--accent)">encode.hielluo.org/{name}-{code}</span></div>
 
     <label class="field-label" for="site-name">Site name</label>
     <input class="text-input" id="site-name" placeholder="my-awesome-site" maxlength="40" autocomplete="off" spellcheck="false"/>
@@ -379,7 +395,70 @@
     if (file?.name.endsWith('.zip')) processZip(file);
   });
 
-  // ── Deploy ──
+  // ── Edit mode ──
+  let editingSiteId = null;
+
+  function enterEditMode(siteId, siteName) {
+    editingSiteId = siteId;
+    document.getElementById('edit-banner').style.display = 'flex';
+    document.getElementById('edit-banner-text').textContent = `Editing: encode.hielluo.org/${siteId}`;
+    document.getElementById('card-title').textContent = 'Edit site';
+    document.getElementById('card-sub').textContent = 'Changes will update your live site immediately.';
+    document.getElementById('site-name').value = siteName;
+    document.getElementById('site-name').disabled = true;
+    document.getElementById('slug-preview').textContent = '';
+    document.getElementById('deploy-btn').textContent = 'Update';
+    document.getElementById('result-box').style.display = 'none';
+    document.getElementById('deploy-error').textContent = '';
+    document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function exitEditMode() {
+    editingSiteId = null;
+    document.getElementById('edit-banner').style.display = 'none';
+    document.getElementById('card-title').textContent = 'Deploy a new site';
+    document.getElementById('card-sub').innerHTML = 'Your site will be live at <span style="color:var(--accent)">encode.hielluo.org/{name}-{code}</span>';
+    document.getElementById('site-name').value = '';
+    document.getElementById('site-name').disabled = false;
+    document.getElementById('slug-preview').textContent = '';
+    document.getElementById('deploy-btn').textContent = 'Deploy';
+    document.getElementById('html-input').value = '';
+    document.getElementById('result-box').style.display = 'none';
+    document.getElementById('deploy-error').textContent = '';
+  }
+
+  document.getElementById('btn-cancel-edit').addEventListener('click', exitEditMode);
+
+  window.editSite = async (siteId, siteName, fileCount) => {
+    enterEditMode(siteId, siteName);
+    if (fileCount > 1) {
+      // ZIP site — switch to ZIP tab, show message
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'zip'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-zip'));
+      activeTab = 'zip';
+      zipFiles = null;
+      document.getElementById('file-info-box').style.display = 'none';
+      document.getElementById('deploy-error').textContent = 'This site has multiple files. Upload a new ZIP to update it.';
+      return;
+    }
+    // Single-file site — load index.html into textarea
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'paste'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-paste'));
+    activeTab = 'paste';
+    document.getElementById('html-input').value = 'Loading…';
+    try {
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch(`/encodever/file?siteId=${encodeURIComponent(siteId)}&path=index.html&idToken=${encodeURIComponent(idToken)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      document.getElementById('html-input').value = data.content;
+    } catch (e) {
+      document.getElementById('html-input').value = '';
+      document.getElementById('deploy-error').textContent = 'Failed to load site: ' + e.message;
+    }
+  };
+
+  // ── Deploy / Update ──
   document.getElementById('deploy-btn').addEventListener('click', async () => {
     const btn = document.getElementById('deploy-btn');
     const errEl = document.getElementById('deploy-error');
@@ -404,23 +483,28 @@
 
     try {
       const idToken = await currentUser.getIdToken();
-      const res = await fetch('/encodever/upload', {
+      const endpoint = editingSiteId ? '/encodever/update' : '/encodever/upload';
+      const body = editingSiteId
+        ? { idToken, siteId: editingSiteId, files }
+        : { idToken, name, files };
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, name, files }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Upload failed');
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed');
       const urlEl = document.getElementById('result-url');
       urlEl.href = data.url;
       urlEl.textContent = data.url;
       document.getElementById('result-box').style.display = 'block';
+      if (editingSiteId) exitEditMode();
       loadSites();
     } catch (e) {
       errEl.textContent = e.message;
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Deploy';
+      btn.textContent = editingSiteId ? 'Update' : 'Deploy';
     }
   });
 
@@ -452,6 +536,7 @@
         <div class="site-item-name">${s.name}</div>
         <div class="site-item-url"><a href="${s.url}" target="_blank" rel="noopener">${s.url.replace('https://', '')}</a></div>
         <div class="site-item-actions">
+          <button class="btn-site-action" onclick="editSite('${s.siteId}','${s.name}',${(s.files||[]).length})">Edit</button>
           <button class="btn-site-action" onclick="copySiteUrl('${s.url}')">Copy</button>
           <button class="btn-site-action btn-site-delete" onclick="deleteSite('${s.siteId}')">Delete</button>
         </div>

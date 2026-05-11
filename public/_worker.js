@@ -373,6 +373,39 @@ async function handleEncodeSites(request, env) {
   return jsonResponse({ sites: sites.map(s => ({ ...s, url: `https://encode.hielluo.org/${s.siteId}` })) });
 }
 
+async function handleEncodeGetFile(request, env) {
+  const url = new URL(request.url);
+  const idToken = url.searchParams.get('idToken');
+  const siteId = url.searchParams.get('siteId');
+  const path = url.searchParams.get('path') || 'index.html';
+  if (!idToken || !siteId) return jsonResponse({ error: 'Missing params' }, 400);
+  let uid;
+  try { uid = await verifyIdToken(idToken); } catch (e) { return jsonResponse({ error: e.message }, 401); }
+  const meta = await env.ENCODEVER_KV.get(`m:${siteId}`, 'json');
+  if (!meta || meta.uid !== uid) return jsonResponse({ error: 'Not found or not authorized' }, 403);
+  const entry = await env.ENCODEVER_KV.get(`f:${siteId}:${path}`, 'json');
+  if (!entry) return jsonResponse({ error: 'File not found' }, 404);
+  return jsonResponse({ content: entry.c, encoding: entry.e, type: entry.t, files: meta.files || [] });
+}
+
+async function handleEncodeUpdate(request, env) {
+  const data = await request.json().catch(() => null);
+  if (!data) return jsonResponse({ error: 'Invalid request' }, 400);
+  const { idToken, siteId, files } = data;
+  if (!idToken || !siteId) return jsonResponse({ error: 'Missing params' }, 400);
+  if (!files?.length) return jsonResponse({ error: 'No files provided' }, 400);
+  let uid;
+  try { uid = await verifyIdToken(idToken); } catch (e) { return jsonResponse({ error: e.message }, 401); }
+  const meta = await env.ENCODEVER_KV.get(`m:${siteId}`, 'json');
+  if (!meta || meta.uid !== uid) return jsonResponse({ error: 'Not found or not authorized' }, 403);
+  if (meta.files) await Promise.all(meta.files.map(p => env.ENCODEVER_KV.delete(`f:${siteId}:${p}`)));
+  await Promise.all(files.map(f =>
+    env.ENCODEVER_KV.put(`f:${siteId}:${f.path}`, JSON.stringify({ c: f.content, t: f.type || getContentType(f.path), e: f.encoding || 'utf8' }))
+  ));
+  await env.ENCODEVER_KV.put(`m:${siteId}`, JSON.stringify({ ...meta, files: files.map(f => f.path) }));
+  return jsonResponse({ url: `https://encode.hielluo.org/${siteId}`, siteId });
+}
+
 async function handleEncodeDelete(request, env) {
   const { idToken, siteId } = await request.json().catch(() => ({}));
   if (!idToken) return jsonResponse({ error: 'Auth required' }, 401);
@@ -404,7 +437,9 @@ export default {
     if (pathname === '/genesis/models') return handleGenesisModels();
     if (method === 'POST' && pathname === '/auth/custom-token') return handleCustomToken(request, env);
     if (method === 'POST' && pathname === '/encodever/upload') return handleEncodeUpload(request, env);
+    if (method === 'POST' && pathname === '/encodever/update') return handleEncodeUpdate(request, env);
     if (method === 'GET' && pathname === '/encodever/sites') return handleEncodeSites(request, env);
+    if (method === 'GET' && pathname === '/encodever/file') return handleEncodeGetFile(request, env);
     if (method === 'POST' && pathname === '/encodever/delete') return handleEncodeDelete(request, env);
 
     // Clean URL → index.html routing
